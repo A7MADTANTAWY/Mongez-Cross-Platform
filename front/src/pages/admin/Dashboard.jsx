@@ -25,11 +25,10 @@ const statusColors = {
 const fetchDashboard = () => adminAPI.dashboard().then((res) => res.data);
 
 const Dashboard = () => {
-  // Live-poll the dashboard aggregate every 10 s so admins see mobile
-  // activity (new orders, status changes) without manual refresh.
-  const { data, loading, lastUpdatedAt, refresh } =
+  const { data, loading, error, lastUpdatedAt, refresh } =
     usePolling(fetchDashboard, { intervalMs: 3_000 });
   const updatedLabel = useTimeAgo(lastUpdatedAt);
+
 
   const stats = data?.stats || null;
   const recentOrders = data?.recent_orders || [];
@@ -67,6 +66,18 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center gap-2 mb-3" style={{ borderRadius: '12px', border: 'none' }}>
+          <i className="bi bi-exclamation-triangle-fill"></i>
+          <div>
+            <strong>Failed to load dashboard data.</strong>{' '}
+            {error?.response?.status === 401 && 'Session expired — please log in again.'}
+            {error?.response?.status === 403 && 'Admin access required. Please log in with an admin account.'}
+            {![401, 403].includes(error?.response?.status) && (error?.response?.data?.detail || error?.message || 'Unknown error')}
+          </div>
+        </div>
+      )}
 
       <StatsCards stats={statCards} loading={loading} />
 

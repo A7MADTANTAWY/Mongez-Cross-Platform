@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mongez/core/helpers.dart';
-import 'package:mongez/features/auth/screens/login_screen.dart';
+import 'package:mongez/features/auth/bloc/auth_cubit.dart';
+import 'package:mongez/features/auth/screens/google_sign_in_screen.dart';
 import 'package:mongez/features/auth/screens/onboarding/onboarding_screen.dart';
 import 'package:mongez/generated/l10n.dart';
 import 'package:mongez/widgets/custom_button.dart';
@@ -26,7 +28,10 @@ class _GetStartedScreenState extends State<GetStartedScreen>
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => const LoginScreen(),
+            builder: (_) => BlocProvider.value(
+              value: context.read<AuthCubit>(),
+              child: const GoogleSignInScreen(),
+            ),
           ),
         );
       });

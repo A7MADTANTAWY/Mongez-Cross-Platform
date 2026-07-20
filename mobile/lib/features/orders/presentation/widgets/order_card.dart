@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mongez/features/orders/data/models/order_model.dart';
@@ -29,6 +31,71 @@ class _OrderCardState extends State<OrderCard> {
   bool _isMarkingFinished = false;
   bool _isCancelling = false;
   bool _isConfirming = false;
+  Timer? _countdownTimer;
+  Duration _remaining = Duration.zero;
+  bool _lateCancelReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdownIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(OrderCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.order.id != widget.order.id ||
+        oldWidget.order.status != widget.order.status) {
+      _countdownTimer?.cancel();
+      _startCountdownIfNeeded();
+    }
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdownIfNeeded() {
+    if (!widget.isCustomer ||
+        widget.order.status != OrderStatus.accepted ||
+        widget.order.acceptedAt == null) {
+      return;
+    }
+    final acceptedAt = DateTime.tryParse(widget.order.acceptedAt!);
+    if (acceptedAt == null) return;
+    final deadline = acceptedAt.toUtc().add(const Duration(hours: 1));
+
+    void tick() {
+      final now = DateTime.now().toUtc();
+      final diff = deadline.difference(now);
+      if (!mounted) return;
+      if (diff.isNegative) {
+        _countdownTimer?.cancel();
+        setState(() {
+          _remaining = Duration.zero;
+          _lateCancelReady = true;
+        });
+      } else {
+        setState(() {
+          _remaining = diff;
+          _lateCancelReady = false;
+        });
+      }
+    }
+
+    tick();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+  }
+
+  String _formatCountdown(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (h > 0) return '$h:$m:$s';
+    return '$m:$s';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -171,13 +238,34 @@ class _OrderCardState extends State<OrderCard> {
         );
       }
       if (widget.order.status == OrderStatus.accepted) {
+        if (_lateCancelReady) {
+          return Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, size: 16, color: Colors.red),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  lang.workerLateCancel,
+                  style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+                onPressed: _isCancelling ? null : () => _showCancelDialog(context),
+                child: _isCancelling
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(lang.cancel),
+              ),
+            ],
+          );
+        }
         return Row(
           children: [
             Icon(Icons.check_circle, size: 16, color: Colors.green),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                '${widget.order.workerName ?? lang.serviceProvider} accepted your request',
+                '${widget.order.workerName ?? lang.serviceProvider} accepted — ${lang.cancelIn(_formatCountdown(_remaining))}',
                 style: TextStyle(color: Colors.green.shade700, fontSize: 13),
               ),
             ),

@@ -193,5 +193,12 @@
   "rejectedByYou": "Rejected by you",
   "notifications": "Notifications",
   "markAllRead": "Mark all as read",
-  "noNotifications": "No notifications yet"
+  "noNotifications": "No notifications yet",
+  "cancelIn": "If the worker is late, you can cancel in {time}",
+  "workerLateCancel": "The worker is late — you can now cancel",
+  "tapToSelectAddress": "Tap to select an address",
+  "noAddresses": "No addresses yet",
+  "failedToLoad": "Failed to load",
+  "retry": "Retry",
+  "addressDetailsHint": "e.g. 12 Street Name, District"
 }

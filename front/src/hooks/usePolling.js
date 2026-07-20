@@ -65,6 +65,7 @@ export function usePolling(fetcher, { intervalMs = 10_000, initialData = null, e
         setLastUpdatedAt(new Date());
       } catch (err) {
         if (!alive) return;
+        console.error('[usePolling]', err?.response?.status, err?.response?.data || err?.message || err);
         setError(err);
       } finally {
         if (alive) setLoading(false);

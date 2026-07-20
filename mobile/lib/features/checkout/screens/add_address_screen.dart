@@ -46,7 +46,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Failed to save: $e'), backgroundColor: AppColors.danger),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -55,38 +55,44 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final lang = S.of(context);
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: CustomAppBar(title: lang.addNewAddress),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Divider(thickness: 1, color: AppColors.gray3),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
                     lang.addressNickname,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   CustomFormField(
                     controller: _labelCtrl,
                     hintText: 'e.g. Home, Office',
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 24),
                   Text(
                     lang.addressDetails,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   CustomFormField(
                     controller: _addressCtrl,
                     hintText: 'e.g. 12 Street Name, District',
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Checkbox(
@@ -96,19 +102,21 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         },
                         activeColor: AppColors.primary,
                         checkColor: Colors.white,
-                        side: const BorderSide(color: AppColors.primary, width: 2),
+                        side: const BorderSide(color: AppColors.textTertiary, width: 2),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         lang.makeDefault,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 32),
                   CustomButton(
-                    text: lang.apply,
-                    onPressed: _saving ? () {} : () => _save(),
+                    text: _saving ? '...' : lang.apply,
+                    onPressed: _saving ? null : () => _save(),
                   ),
                 ],
               ),

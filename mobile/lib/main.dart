@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:mongez/firebase_options.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mongez/core/app_themes.dart';
 import 'package:mongez/core/bloc/cubit/localization_cubit.dart';
 import 'package:mongez/core/bloc/theme_cubit/theme_cubit.dart';
 import 'package:mongez/core/helpers.dart';
-import 'package:mongez/features/auth/bloc/register_cubit/register_cubit.dart';
-import 'package:mongez/features/auth/bloc/login_cubit/auth_cubit.dart';
-import 'package:mongez/features/auth/repos/auth_repo_implementation.dart';
-import 'package:mongez/features/auth/screens/get_started_screen.dart';
+import 'package:mongez/features/auth/bloc/auth_cubit.dart';
+import 'package:mongez/features/auth/repos/auth_repository.dart';
+import 'package:mongez/features/auth/screens/complete_profile_screen.dart';
+import 'package:mongez/features/auth/screens/google_sign_in_screen.dart';
+import 'package:mongez/features/auth/screens/pending_verification_screen.dart';
 import 'package:mongez/features/auth/models/auth.dart';
 import 'package:mongez/features/auth/models/user.dart';
 import 'package:mongez/features/auth/models/tokens.dart';
@@ -39,6 +42,9 @@ import 'package:mongez/core/constants/api_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   setup();
   await AppPrefs.init();
   runApp(const MyApp());
@@ -57,11 +63,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => LocalizationCubit()),
             BlocProvider(
               create: (context) =>
-                  LoginCubit(authRepo: getIt.get<AuthRepoImplementation>()),
-            ),
-            BlocProvider(
-              create: (context) =>
-                  RegisterCubit(authRepo: getIt.get<AuthRepoImplementation>()),
+                  AuthCubit(authRepository: getIt.get<AuthRepository>()),
             ),
             BlocProvider(
               create: (context) =>
@@ -108,9 +110,6 @@ class MyApp extends StatelessWidget {
                 workerRepository: getIt.get<WorkerRepository>(),
               ),
             ),
-            // Worker stats — loaded lazily on the worker home screen
-            // (the request 404s for client/admin users, so we don't
-            // hit it eagerly here).
             BlocProvider(
               create: (context) => WorkerStatsCubit(
                 workerRepository: getIt.get<WorkerRepository>(),
@@ -202,20 +201,21 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
           final retry = await profileRepo.getProfile();
           retry.fold(
             (_) => _goToAuthFlow(),
-            (profile) => _goToMain(profile, newToken),
+            (profile) => _goToProfileOrMain(profile, newToken),
           );
         },
-        (profile) => _goToMain(profile, token),
+        (profile) => _goToProfileOrMain(profile, token),
       );
     } catch (_) {
       _goToAuthFlow();
     }
   }
 
-  void _goToMain(dynamic profile, String token) {
+  void _goToProfileOrMain(dynamic profile, String token) {
     final user = User(
       id: profile.id,
       username: profile.username,
+      email: profile.email,
       nameAr: profile.nameAr,
       displayName: profile.displayName,
       phone: profile.phone,
@@ -226,15 +226,31 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       profileImage: profile.profileImage,
       role: profile.role,
       dateJoined: profile.dateJoined != null
-        ? DateTime.tryParse(profile.dateJoined!)
-        : null,
+          ? DateTime.tryParse(profile.dateJoined!)
+          : null,
+      profileCompleted: profile.profileCompleted,
+      verificationStatus: profile.verificationStatus,
+      rejectionReason: profile.rejectionReason,
     );
     final auth = Auth(
       message: '',
       user: user,
       tokens: Tokens(access: token),
+      profileCompleted: profile.profileCompleted,
+      verificationStatus: profile.verificationStatus,
     );
-    _goToMainScreen(auth);
+
+    final profileCompleted = profile.profileCompleted ?? false;
+    final verificationStatus = profile.verificationStatus ?? 'verified';
+    final role = profile.role ?? 'client';
+
+    if (!profileCompleted) {
+      _goToCompleteProfile(auth);
+    } else if (role == 'worker' && (verificationStatus == 'pending' || verificationStatus == 'rejected')) {
+      _goToPendingVerification(auth);
+    } else {
+      _goToMainScreen(auth);
+    }
   }
 
   Future<bool> _tryRefreshToken() async {
@@ -263,11 +279,44 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     NavigationService.toMainScreen(context, auth);
   }
 
+  void _goToCompleteProfile(Auth auth) {
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<AuthCubit>(),
+          child: CompleteProfileScreen(auth: auth),
+        ),
+      ),
+      (route) => false,
+    );
+  }
+
+  void _goToPendingVerification(Auth auth) {
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<AuthCubit>(),
+          child: PendingVerificationScreen(auth: auth),
+        ),
+      ),
+      (route) => false,
+    );
+  }
+
   void _goToAuthFlow() {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<AuthCubit>(),
+          child: const GoogleSignInScreen(),
+        ),
+      ),
       (route) => false,
     );
   }
@@ -279,5 +328,3 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     );
   }
 }
-
-//.\venv\Scripts\python.exe manage.py runserver

@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class User extends Equatable {
   final int? id;
   final String? username;
+  final String? email;
   final String? nameAr;
   final String? displayName;
   final String? phone;
@@ -13,10 +14,14 @@ class User extends Equatable {
   final String? profileImage;
   final String? role;
   final DateTime? dateJoined;
+  final bool? profileCompleted;
+  final String? verificationStatus;
+  final String? rejectionReason;
 
   const User({
     this.id,
     this.username,
+    this.email,
     this.nameAr,
     this.displayName,
     this.phone,
@@ -27,11 +32,15 @@ class User extends Equatable {
     this.profileImage,
     this.role,
     this.dateJoined,
+    this.profileCompleted,
+    this.verificationStatus,
+    this.rejectionReason,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
     id: json['id'] as int?,
     username: json['username'] as String?,
+    email: json['email'] as String?,
     nameAr: json['name_ar'] as String?,
     displayName: json['display_name'] as String?,
     phone: json['phone'] as String?,
@@ -44,11 +53,15 @@ class User extends Equatable {
     dateJoined: json['date_joined'] == null
         ? null
         : DateTime.parse(json['date_joined'] as String),
+    profileCompleted: json['profile_completed'] as bool?,
+    verificationStatus: json['verification_status'] as String?,
+    rejectionReason: json['rejection_reason'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'username': username,
+    'email': email,
     'name_ar': nameAr,
     'display_name': displayName,
     'phone': phone,
@@ -59,6 +72,9 @@ class User extends Equatable {
     'profile_image': profileImage,
     'role': role,
     'date_joined': dateJoined?.toIso8601String(),
+    'profile_completed': profileCompleted,
+    'verification_status': verificationStatus,
+    'rejection_reason': rejectionReason,
   };
 
   String nameFor(String languageCode) {
@@ -77,8 +93,9 @@ class User extends Equatable {
   @override
   List<Object?> get props {
     return [
-      id, username, nameAr, displayName, phone, address,
+      id, username, email, nameAr, displayName, phone, address,
       governorate, governorateLabel, city, profileImage, role, dateJoined,
+      profileCompleted, verificationStatus, rejectionReason,
     ];
   }
 }

@@ -81,3 +81,16 @@ class IsOrderParticipant(BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
         return obj.client_id == user.id or obj.worker_id == user.id
+
+
+class IsProfileCompleted(BasePermission):
+    """Ensures the user has completed their profile before accessing protected resources."""
+
+    message = "Profile not completed."
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, "profile_completed", False)
+        )

@@ -4,16 +4,17 @@ from . import views
 
 urlpatterns = [
     # Auth
-    path("auth/register/",      views.RegisterView.as_view(),        name="register"),
-    path("auth/login/",         views.LoginView.as_view(),           name="login"),
-    path("auth/logout/",        views.LogoutView.as_view(),          name="logout"),
-    path("auth/password/",      views.PasswordChangeView.as_view(),  name="password-change"),
-    path("auth/token/refresh/", TokenRefreshView.as_view(),          name="token-refresh"),
+    path("auth/google/",              views.GoogleSignInView.as_view(),            name="google-sign-in"),
+    path("auth/login/",               views.AdminLoginView.as_view(),             name="admin-login"),
+    path("auth/complete-profile/",    views.CompleteProfileView.as_view(),         name="complete-profile"),
+    path("auth/delete-incomplete/",   views.DeleteIncompleteProfileView.as_view(), name="delete-incomplete"),
+    path("auth/logout/",              views.LogoutView.as_view(),                 name="logout"),
+    path("auth/token/refresh/",       TokenRefreshView.as_view(),                 name="token-refresh"),
     # User profile
-    path("users/me/",           views.MyProfileView.as_view(),       name="my-profile"),
+    path("users/me/",                 views.MyProfileView.as_view(),              name="my-profile"),
     # Reference data
-    path("governorates/",       views.GovernoratesView.as_view(),    name="governorates"),
+    path("governorates/",             views.GovernoratesView.as_view(),           name="governorates"),
     # Addresses
-    path("addresses/",          views.AddressListCreateView.as_view(), name="address-list-create"),
-    path("addresses/<int:pk>/", views.AddressDeleteView.as_view(),     name="address-delete"),
+    path("addresses/",                views.AddressListCreateView.as_view(),       name="address-list-create"),
+    path("addresses/<int:pk>/",       views.AddressDetailView.as_view(),           name="address-detail"),
 ]

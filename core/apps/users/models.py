@@ -51,9 +51,30 @@ class User(AbstractUser):
         WORKER = "worker", "Worker"
         ADMIN = "admin", "Admin"
 
+    class VerificationStatus(models.TextChoices):
+        PENDING = "pending", "Pending Verification"
+        VERIFIED = "verified", "Verified"
+        REJECTED = "rejected", "Rejected"
+
+    google_id = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Google OAuth sub (unique identifier).",
+    )
+    profile_completed = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Whether the user has completed the required profile fields.",
+    )
+
     phone = models.CharField(
         max_length=20,
-        unique=True,
+        unique=False,
+        blank=True,
+        default="",
         validators=[phone_validator],
     )
     name_ar = models.CharField(
@@ -75,7 +96,34 @@ class User(AbstractUser):
         default=Role.CLIENT,
     )
 
-    REQUIRED_FIELDS = ["phone", "email"]
+    # ── Worker verification ──
+    verification_status = models.CharField(
+        max_length=12,
+        choices=VerificationStatus.choices,
+        default=VerificationStatus.VERIFIED,
+        db_index=True,
+        help_text="Only workers need verification; clients are auto-verified.",
+    )
+    id_card_image = models.ImageField(
+        upload_to="id_cards/", blank=True, null=True,
+        help_text="National ID card photo uploaded by the worker during registration.",
+    )
+    verified_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the admin verified the worker account.",
+    )
+    verified_by = models.ForeignKey(
+        "self", null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="verified_workers",
+        help_text="Admin who verified this worker.",
+    )
+    rejection_reason = models.TextField(
+        blank=True, default="",
+        help_text="Reason provided by admin when rejecting a worker.",
+    )
+
+    REQUIRED_FIELDS = ["email"]
 
     def __str__(self):
         return f"{self.username} ({self.role})"
@@ -92,6 +140,9 @@ class User(AbstractUser):
             models.Index(fields=["role"]),
             models.Index(fields=["phone"]),
             models.Index(fields=["governorate", "city"]),
+            models.Index(fields=["google_id"]),
+            models.Index(fields=["profile_completed"]),
+            models.Index(fields=["verification_status"]),
         ]
 
 

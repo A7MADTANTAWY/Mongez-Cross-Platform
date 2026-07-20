@@ -17,8 +17,8 @@ i18n
   .use(initReactI18next) // يمرر i18n إلى react-i18next
   .init({
     resources,
-    lng: 'en', // اللغة الافتراضية
-    fallbackLng: 'en', // اللغة الاحتياطية
+    lng: 'ar',
+    fallbackLng: 'ar',
     interpolation: {
       escapeValue: false // React يقوم بتأمين النصوص تلقائياً
     },

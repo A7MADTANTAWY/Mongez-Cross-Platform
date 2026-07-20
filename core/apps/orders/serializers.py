@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from apps.users.models import User
-from apps.users.serializers import UserSerializer
+from apps.users.models import User, Address
+from apps.users.serializers import UserSerializer, AddressSerializer
 from apps.workers.models import ServiceCategory, WorkerProfile
 from apps.workers.serializers import ServiceCategorySerializer
 from .models import Order, OrderAttachment
@@ -33,6 +33,8 @@ class OrderSerializer(serializers.ModelSerializer):
     service_category = ServiceCategorySerializer(read_only=True)
     commission_payment = serializers.SerializerMethodField()
     attachments = OrderAttachmentSerializer(many=True, read_only=True)
+    is_rated = serializers.SerializerMethodField()
+    address = AddressSerializer(read_only=True)
 
     class Meta:
         model = Order
@@ -42,6 +44,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "worker",
             "service_category",
             "description",
+            "address",
             "address_text",
             "latitude",
             "longitude",
@@ -55,6 +58,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "completed_at",
             "cancelled_at",
             "commission_payment",
+            "is_rated",
         ]
 
     def get_commission_payment(self, order):
@@ -69,6 +73,9 @@ class OrderSerializer(serializers.ModelSerializer):
         except Exception:
             return None
 
+    def get_is_rated(self, order):
+        return hasattr(order, 'rating')
+
 
 class OrderCreateSerializer(serializers.ModelSerializer):
 
@@ -81,12 +88,18 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         required = False,
         allow_null = True,
     )
+    address_id = serializers.PrimaryKeyRelatedField(
+        queryset = Address.objects.all(),
+        source = "address",
+        required = False,
+        allow_null = True,
+    )
 
     class Meta:
         model  = Order
         fields = [
             "service_category", "worker_id",
-            "description", "address_text",
+            "description", "address_text", "address_id",
             "latitude", "longitude",
             "urgency", "scheduled_for",
         ]
@@ -95,6 +108,14 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         """Validate worker against category when worker_id is provided."""
         worker = attrs.get("worker")
         service_category = attrs.get("service_category")
+        address = attrs.get("address")
+
+        if address is not None:
+            request = self.context.get("request")
+            if request and address.user != request.user:
+                raise serializers.ValidationError(
+                    {"address_id": "This address does not belong to you."}
+                )
 
         if worker is None:
             return attrs

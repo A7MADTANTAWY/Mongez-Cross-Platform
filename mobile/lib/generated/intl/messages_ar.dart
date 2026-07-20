@@ -24,6 +24,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m1(name) => "مرحبًا، ${name}!";
 
+  static String m2(time) => "لو الفني اتأخر، تقدر تلغي خلال $time";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "acMaintenance": MessageLookupByLibrary.simpleMessage("صيانة التكييف"),
@@ -68,6 +70,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "bookNow": MessageLookupByLibrary.simpleMessage("احجز الآن"),
     "bookingFee": MessageLookupByLibrary.simpleMessage("رسوم الحجز"),
     "cancel": MessageLookupByLibrary.simpleMessage("إلغاء"),
+    "cancelIn": m2,
     "cancelRequest": MessageLookupByLibrary.simpleMessage("إلغاء الطلب"),
     "cancelRequestConfirm": MessageLookupByLibrary.simpleMessage(
       "هل أنت متأكد أنك تريد إلغاء هذا الطلب؟",
@@ -261,5 +264,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "contactInfo": MessageLookupByLibrary.simpleMessage("معلومات الاتصال"),
     "phoneForOrder": MessageLookupByLibrary.simpleMessage("رقم الهاتف لهذا الطلب"),
     "addressForOrder": MessageLookupByLibrary.simpleMessage("العنوان لهذا الطلب"),
+    "workerLateCancel": MessageLookupByLibrary.simpleMessage("الفني اتأخر — تقدر تلغي دلوقتي"),
+    "tapToSelectAddress": MessageLookupByLibrary.simpleMessage("اضغط لاختيار عنوان"),
+    "noAddresses": MessageLookupByLibrary.simpleMessage("لا توجد عناوين بعد"),
+    "failedToLoad": MessageLookupByLibrary.simpleMessage("فشل التحميل"),
+    "retry": MessageLookupByLibrary.simpleMessage("إعادة المحاولة"),
+    "addressDetailsHint": MessageLookupByLibrary.simpleMessage("مثال: 12 اسم الشارع, المنطقة"),
   };
 }

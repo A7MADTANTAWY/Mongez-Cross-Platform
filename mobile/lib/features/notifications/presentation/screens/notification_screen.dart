@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mongez/features/auth/bloc/login_cubit/auth_cubit.dart';
+import 'package:mongez/features/auth/bloc/auth_cubit.dart';
 import 'package:mongez/features/notifications/data/models/notification_model.dart';
 import 'package:mongez/features/notifications/presentation/cubit/notification_cubit.dart';
 import 'package:mongez/features/orders/domain/order_repository.dart';
@@ -186,8 +186,8 @@ class _NotificationTile extends StatelessWidget {
       },
       (order) {
         if (!context.mounted) return;
-        final authState = context.read<LoginCubit>().state;
-        final isCustomer = authState is LoginSuccess && authState.auth.user?.role == 'client';
+        final authState = context.read<AuthCubit>().state;
+        final isCustomer = authState is AuthAuthenticated && authState.auth.user?.role == 'client';
         Navigator.push(
           context,
           MaterialPageRoute(

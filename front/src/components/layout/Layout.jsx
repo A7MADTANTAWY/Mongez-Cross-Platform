@@ -1,6 +1,4 @@
-import React from 'react';
 import Header from './Header';
-import ChatWidget from '../common/ChatWidget'; // اضبط المسار حسب هيكل مشروعك
 import { Outlet } from 'react-router-dom';
 
 function Layout() {
@@ -10,7 +8,6 @@ function Layout() {
       <main className="flex-grow-1">
         <Outlet />
       </main>
-      <ChatWidget />
     </div>
   );
 }

@@ -3,13 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from core.permissions import IsClient
+from core.permissions import IsClient, IsProfileCompleted
 from .models import Favorite
 from .serializers import FavoriteSerializer
 
 
 class FavoriteListCreateView(APIView):
-    permission_classes = [IsAuthenticated, IsClient]
+    permission_classes = [IsAuthenticated, IsClient, IsProfileCompleted]
 
     def get(self, request):
         favorites = (
@@ -37,7 +37,7 @@ class FavoriteListCreateView(APIView):
 
 
 class FavoriteDeleteView(APIView):
-    permission_classes = [IsAuthenticated, IsClient]
+    permission_classes = [IsAuthenticated, IsClient, IsProfileCompleted]
 
     def delete(self, request, pk):
         try:
@@ -57,7 +57,7 @@ class FavoriteDeleteView(APIView):
 class FavoriteByWorkerDeleteView(APIView):
     """DELETE /api/favorites/worker/<worker_id>/ — convenient toggle by worker id."""
 
-    permission_classes = [IsAuthenticated, IsClient]
+    permission_classes = [IsAuthenticated, IsClient, IsProfileCompleted]
 
     def delete(self, request, worker_id):
         deleted, _ = Favorite.objects.filter(

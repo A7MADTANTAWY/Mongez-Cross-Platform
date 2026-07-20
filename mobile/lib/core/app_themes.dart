@@ -243,7 +243,7 @@ class AppThemes {
           disabledForegroundColor: scheme.onPrimary.withValues(alpha: 0.7),
           elevation: 0,
           shadowColor: scheme.primary.withValues(alpha: 0.25),
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(0, 48),
           shape: _shape,
           textStyle: GoogleFonts.inter(
             fontSize: 15, fontWeight: FontWeight.w600,
@@ -253,7 +253,7 @@ class AppThemes {
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(0, 48),
           shape: _shape,
           textStyle: GoogleFonts.inter(
             fontSize: 15, fontWeight: FontWeight.w600,
@@ -265,7 +265,7 @@ class AppThemes {
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.primary,
           side: BorderSide(color: scheme.primary, width: 1.4),
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(0, 48),
           shape: _shape,
           textStyle: GoogleFonts.inter(
             fontSize: 15, fontWeight: FontWeight.w600,

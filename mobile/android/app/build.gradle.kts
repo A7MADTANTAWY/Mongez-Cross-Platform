@@ -1,6 +1,6 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.mongez"
+        applicationId = "com.mongez.app"
         minSdk = flutter.minSdkVersion          // يدعم Android 5.0 Lollipop وأحدث (يغطي تقريبًا كل الموبايلات القديمة المستخدمة دلوقتي)
         targetSdk = 33
         versionCode = flutter.versionCode

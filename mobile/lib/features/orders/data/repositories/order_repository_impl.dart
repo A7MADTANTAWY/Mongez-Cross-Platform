@@ -46,6 +46,7 @@ class OrderRepositoryImpl implements OrderRepository {
     required int workerId,
     required String description,
     String? address,
+    int? addressId,
     String? phone,
     String? urgency,
     double? latitude,
@@ -64,6 +65,7 @@ class OrderRepositoryImpl implements OrderRepository {
           'description': description,
         };
         if (address != null) body['address_text'] = address;
+        if (addressId != null) body['address_id'] = addressId;
         if (urgency != null) body['urgency'] = urgency;
         if (latitude != null) body['latitude'] = latitude;
         if (longitude != null) body['longitude'] = longitude;
@@ -78,6 +80,7 @@ class OrderRepositoryImpl implements OrderRepository {
         'description': description,
       };
       if (address != null) fields['address_text'] = address;
+      if (addressId != null) fields['address_id'] = addressId;
       if (urgency != null) fields['urgency'] = urgency;
       if (latitude != null) fields['latitude'] = latitude;
       if (longitude != null) fields['longitude'] = longitude;

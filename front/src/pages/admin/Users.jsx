@@ -65,7 +65,7 @@ const Users = () => {
   // 4 s — admins want changes from other admins / the mobile to land
   // quickly. The backend stats cache TTL is 2 s and gets busted on
   // every mutation, so this is the bottleneck.
-  const { data, loading, lastUpdatedAt, refresh } = usePolling(fetchUsers, {
+  const { data, loading, error, lastUpdatedAt, refresh } = usePolling(fetchUsers, {
     intervalMs: 4_000,
     initialData: { results: [], count: 0 },
   });
@@ -127,12 +127,12 @@ const Users = () => {
           fd.append('avatar', form.avatar);
           await adminAPI.users.update(editingUser.id, fd);
         } else {
-          const { avatar, avatarPreview, ...rest } = form;
+          const { avatar: _avatar, avatarPreview: _preview, ...rest } = form;
           if (!rest.password) delete rest.password;
           await adminAPI.users.update(editingUser.id, rest);
         }
       } else {
-        const { avatar, avatarPreview, ...rest } = form;
+        const { avatar: _avatar, avatarPreview: _preview, ...rest } = form;
         await adminAPI.users.create(rest);
       }
       setShowModal(false);
@@ -204,6 +204,18 @@ const Users = () => {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center gap-2 mb-3" style={{ borderRadius: '12px', border: 'none' }}>
+          <i className="bi bi-exclamation-triangle-fill"></i>
+          <div>
+            <strong>Failed to load users.</strong>{' '}
+            {error?.response?.status === 401 && 'Session expired — try refreshing.'}
+            {error?.response?.status === 403 && 'You do not have admin permissions.'}
+            {![401, 403].includes(error?.response?.status) && (error?.response?.data?.detail || error?.message || 'Unknown error')}
+          </div>
+        </div>
+      )}
 
       <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
         <div className="card-body p-4">

@@ -239,6 +239,13 @@ class S {
   String get notifications => Intl.message('Notifications', name: 'notifications');
   String get markAllRead => Intl.message('Mark all as read', name: 'markAllRead');
   String get noNotifications => Intl.message('No notifications yet', name: 'noNotifications');
+  String cancelIn(String time) => Intl.message('If the worker is late, you can cancel in $time', name: 'cancelIn', args: [time]);
+  String get workerLateCancel => Intl.message('The worker is late — you can now cancel', name: 'workerLateCancel');
+  String get tapToSelectAddress => Intl.message('Tap to select an address', name: 'tapToSelectAddress');
+  String get noAddresses => Intl.message('No addresses yet', name: 'noAddresses');
+  String get failedToLoad => Intl.message('Failed to load', name: 'failedToLoad');
+  String get retry => Intl.message('Retry', name: 'retry');
+  String get addressDetailsHint => Intl.message('e.g. 12 Street Name, District', name: 'addressDetailsHint');
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

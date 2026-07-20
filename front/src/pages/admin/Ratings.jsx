@@ -9,7 +9,7 @@ const fetchRatings = () => adminAPI.ratings.list().then((res) => res.data || [])
 const Ratings = () => {
   // 5 s — when an order completes we want the new rating to surface on
   // the moderation page right away.
-  const { data: ratings, loading, lastUpdatedAt, refresh } =
+  const { data: ratings, loading, error, lastUpdatedAt, refresh } =
     usePolling(fetchRatings, { intervalMs: 5_000, initialData: [] });
   const updatedLabel = useTimeAgo(lastUpdatedAt);
 
@@ -115,6 +115,18 @@ const Ratings = () => {
           <ExportCsvButton fetcher={adminAPI.exports.ratings} filename="ratings.csv" />
         </div>
       </div>
+
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center gap-2 mb-3" style={{ borderRadius: '12px', border: 'none' }}>
+          <i className="bi bi-exclamation-triangle-fill"></i>
+          <div>
+            <strong>Failed to load ratings.</strong>{' '}
+            {error?.response?.status === 401 && 'Session expired — try refreshing.'}
+            {error?.response?.status === 403 && 'You do not have admin permissions.'}
+            {![401, 403].includes(error?.response?.status) && (error?.response?.data?.detail || error?.message || 'Unknown error')}
+          </div>
+        </div>
+      )}
 
       <div className="row g-4 mb-4">
         <div className="col-md-4">

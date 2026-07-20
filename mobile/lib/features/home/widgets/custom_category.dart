@@ -15,11 +15,14 @@ class CustomCategory extends StatelessWidget {
     final cs = theme.colorScheme;
     final tt = theme.textTheme;
     final label = category.displayName(locale);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.22;
+    final iconSize = cardWidth * 0.72;
 
     return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 14),
+      padding: const EdgeInsetsDirectional.only(end: 10),
       child: SizedBox(
-        width: 84,
+        width: cardWidth,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -29,8 +32,9 @@ class CustomCategory extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: iconSize,
+                  height: iconSize,
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -40,7 +44,7 @@ class CustomCategory extends StatelessWidget {
                         cs.primaryContainer.withValues(alpha: 0.55),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(iconSize * 0.28),
                     border: Border.all(
                       color: cs.outline.withValues(alpha: 0.3),
                     ),
@@ -55,7 +59,7 @@ class CustomCategory extends StatelessWidget {
                               placeholderBuilder: (_) => Icon(
                                 category.iconData,
                                 color: cs.onPrimaryContainer,
-                                size: 30,
+                                size: iconSize * 0.50,
                               ),
                             )
                           : Image.network(
@@ -64,23 +68,23 @@ class CustomCategory extends StatelessWidget {
                               errorBuilder: (_, __, ___) => Icon(
                                 category.iconData,
                                 color: cs.onPrimaryContainer,
-                                size: 30,
+                                size: iconSize * 0.50,
                               ),
                             ))
                       : Icon(
                           category.iconData,
                           color: cs.onPrimaryContainer,
-                          size: 30,
+                          size: iconSize * 0.50,
                         ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: tt.bodySmall?.copyWith(
-                    fontSize: 12,
+                    fontSize: screenWidth * 0.032,
                     fontWeight: FontWeight.w700,
                     color: cs.onSurface,
                   ),

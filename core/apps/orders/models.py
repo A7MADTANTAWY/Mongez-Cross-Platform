@@ -1,5 +1,5 @@
 from django.db import models
-from apps.users.models import User
+from apps.users.models import User, Address
 from apps.workers.models import ServiceCategory
 
 
@@ -55,6 +55,13 @@ class Order(models.Model):
     description = models.TextField(
         blank=True, max_length=2000,
         help_text="What the client wrote about the issue.",
+    )
+    address = models.ForeignKey(
+        Address,
+        on_delete = models.SET_NULL,
+        null = True,
+        blank = True,
+        related_name = "orders",
     )
     address_text = models.CharField(max_length=255, blank=True)
     latitude = models.DecimalField(

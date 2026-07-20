@@ -10,7 +10,7 @@ from rest_framework.pagination import PageNumberPagination
 from apps.orders.models import Order
 from apps.ratings.models import Rating
 from apps.users.models import User
-from core.permissions import IsAdmin, IsWorker
+from core.permissions import IsAdmin, IsWorker, IsProfileCompleted
 from .models import ServiceCategory, WorkerProfile
 from .serializers import (
     ServiceCategorySerializer,
@@ -245,7 +245,7 @@ class MyWorkerStatsView(APIView):
     job cash itself is settled in person.
     """
 
-    permission_classes = [IsAuthenticated, IsWorker]
+    permission_classes = [IsAuthenticated, IsWorker, IsProfileCompleted]
 
     def get(self, request):
         user = request.user
@@ -313,7 +313,7 @@ class MyWorkerStatsView(APIView):
 
 
 class WorkerCreateView(APIView):
-    permission_classes = [IsAuthenticated, IsWorker]
+    permission_classes = [IsAuthenticated, IsWorker, IsProfileCompleted]
 
     def post(self, request):
         serializer = WorkerProfileWriteSerializer(
@@ -354,7 +354,7 @@ class MyWorkerProfileView(APIView):
     GET   /api/workers/me/ — see my own worker profile
     PATCH /api/workers/me/ — update my own worker profile
     """
-    permission_classes = [IsAuthenticated, IsWorker]
+    permission_classes = [IsAuthenticated, IsWorker, IsProfileCompleted]
 
     def get(self, request):
         if not hasattr(request.user, "worker_profile"):

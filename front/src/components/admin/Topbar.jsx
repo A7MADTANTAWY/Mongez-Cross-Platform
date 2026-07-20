@@ -1,28 +1,31 @@
-import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import logo from '../../assets/images/a.png';
 
 const Topbar = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <nav
       className="navbar navbar-expand px-4 py-3 shadow-sm"
       style={{
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--admin-topbar-bg)',
+        borderBottom: '1px solid var(--admin-topbar-border)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
+        top: 0, left: 0, right: 0,
         zIndex: 1030,
         height: '64px',
+        transition: 'background-color 0.3s ease',
       }}
     >
       <div className="d-flex align-items-center w-100">
         <button
-          className="btn btn-link text-dark p-0 me-3 d-lg-none"
+          className="btn btn-link p-0 me-3 d-lg-none"
           onClick={toggleSidebar}
-          style={{ textDecoration: 'none' }}
+          style={{ textDecoration: 'none', color: 'var(--admin-text)' }}
         >
           <i className="bi bi-list fs-4"></i>
         </button>
@@ -34,13 +37,21 @@ const Topbar = ({ toggleSidebar }) => {
             style={{ width: '28px', height: '28px', objectFit: 'contain' }}
             className="me-2"
           />
-          <span className="fw-bold" style={{ color: '#2c3e50' }}>منجز</span>
+          <span className="fw-bold" style={{ color: 'var(--admin-text)' }}>Mongez</span>
         </div>
 
         <div className="ms-auto d-flex align-items-center gap-3">
-          <div className="d-none d-md-flex align-items-center gap-2 px-3 py-1 rounded-pill" style={{ backgroundColor: '#f1f5f9' }}>
-            <i className="bi bi-person-circle text-muted"></i>
-            <span className="text-muted" style={{ fontSize: '14px' }}>
+          <button
+            className="admin-theme-toggle"
+            onClick={toggleTheme}
+            title={theme === 'light' ? 'Dark mode' : 'Light mode'}
+          >
+            <i className={`bi ${theme === 'light' ? 'bi-moon-stars' : 'bi-sun-fill'}`}></i>
+          </button>
+
+          <div className="d-none d-md-flex align-items-center gap-2 px-3 py-1 rounded-pill" style={{ backgroundColor: 'var(--admin-primary-light)' }}>
+            <i className="bi bi-person-circle" style={{ color: 'var(--admin-text-secondary)' }}></i>
+            <span style={{ fontSize: '14px', color: 'var(--admin-text-secondary)' }}>
               {user?.username || 'Admin'}
             </span>
             <span
@@ -55,7 +66,8 @@ const Topbar = ({ toggleSidebar }) => {
           </div>
 
           <button
-            className="btn btn-link text-decoration-none text-muted p-0 position-relative"
+            className="btn btn-link text-decoration-none p-0 position-relative"
+            style={{ color: 'var(--admin-text-secondary)' }}
             title="Notifications"
           >
             <i className="bi bi-bell fs-5"></i>
@@ -72,11 +84,12 @@ const Topbar = ({ toggleSidebar }) => {
           </button>
 
           <button
-            className="btn btn-link text-decoration-none text-muted p-0"
+            className="btn btn-link text-decoration-none p-0"
+            style={{ color: '#ef4444' }}
             title="Logout"
             onClick={logout}
           >
-            <i className="bi bi-box-arrow-right fs-5" style={{ color: '#ef4444' }}></i>
+            <i className="bi bi-box-arrow-right fs-5"></i>
           </button>
         </div>
       </div>

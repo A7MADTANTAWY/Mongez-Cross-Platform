@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,11 +30,61 @@ class OrderDetailsScreen extends StatefulWidget {
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   late OrderModel _order;
+  Timer? _countdownTimer;
+  Duration _remaining = Duration.zero;
+  bool _lateCancelReady = false;
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+    _startCountdownIfNeeded();
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdownIfNeeded() {
+    if (!widget.isCustomer ||
+        _order.status != OrderStatus.accepted ||
+        _order.acceptedAt == null) {
+      return;
+    }
+    final acceptedAt = DateTime.tryParse(_order.acceptedAt!);
+    if (acceptedAt == null) return;
+    final deadline = acceptedAt.toUtc().add(const Duration(hours: 1));
+
+    void tick() {
+      final now = DateTime.now().toUtc();
+      final diff = deadline.difference(now);
+      if (!mounted) return;
+      if (diff.isNegative) {
+        _countdownTimer?.cancel();
+        setState(() {
+          _remaining = Duration.zero;
+          _lateCancelReady = true;
+        });
+      } else {
+        setState(() {
+          _remaining = diff;
+          _lateCancelReady = false;
+        });
+      }
+    }
+
+    tick();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+  }
+
+  String _formatCountdown(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (h > 0) return '$h:$m:$s';
+    return '$m:$s';
   }
 
   String _formatDate(String? dateStr) {
@@ -284,6 +336,47 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         );
       }
       if (_order.status == OrderStatus.accepted) {
+        if (_lateCancelReady) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        lang.workerLateCancel,
+                        style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _showCancelDialog(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.error,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(lang.cancel),
+                ),
+              ),
+            ],
+          );
+        }
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -296,7 +389,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${_order.workerName ?? lang.serviceProvider} accepted your request',
+                  '${_order.workerName ?? lang.serviceProvider} accepted — ${lang.cancelIn(_formatCountdown(_remaining))}',
                   style: TextStyle(color: Colors.green.shade700),
                 ),
               ),

@@ -1,19 +1,20 @@
-from django.contrib.auth import authenticate
-from django.contrib.auth.password_validation import validate_password
-from django.core.validators import RegexValidator
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
+
 from .governorates import GOVERNORATE_CODES
-from .models import Address, User
+from .models import Address
+
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Read-only projection of a user — used inside other resources."""
+    """Read-only projection of a user."""
 
     avatar_url = serializers.SerializerMethodField()
+    id_card_url = serializers.SerializerMethodField()
     display_name = serializers.CharField(read_only=True)
     governorate_label = serializers.CharField(source="get_governorate_display", read_only=True)
 
-    # Worker-only fields — null for clients/admins
     average_rating = serializers.SerializerMethodField()
     completed_jobs = serializers.SerializerMethodField()
     worker_id = serializers.SerializerMethodField()
@@ -25,7 +26,10 @@ class UserSerializer(serializers.ModelSerializer):
             "email", "phone", "address",
             "governorate", "governorate_label", "city",
             "role", "avatar_url", "date_joined",
+            "profile_completed",
             "average_rating", "completed_jobs", "worker_id",
+            "verification_status", "id_card_url",
+            "verified_at", "rejection_reason",
         ]
         read_only_fields = fields
 
@@ -34,6 +38,13 @@ class UserSerializer(serializers.ModelSerializer):
             return None
         request = self.context.get("request") if hasattr(self, "context") else None
         url = obj.avatar.url
+        return request.build_absolute_uri(url) if request else url
+
+    def get_id_card_url(self, obj):
+        if not obj.id_card_image:
+            return None
+        request = self.context.get("request") if hasattr(self, "context") else None
+        url = obj.id_card_image.url
         return request.build_absolute_uri(url) if request else url
 
     def get_average_rating(self, obj):
@@ -49,53 +60,39 @@ class UserSerializer(serializers.ModelSerializer):
         return profile.id if profile else None
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
-    # Optional fields kept explicit so DRF doesn't infer required=True
-    # from the model's CharField default.
+class GoogleSignInSerializer(serializers.Serializer):
+    """Accepts a Google id_token and returns/creates the user."""
+    id_token = serializers.CharField(max_length=2048)
+
+
+class AdminLoginSerializer(serializers.Serializer):
+    """Username/password login for admin dashboard."""
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+
+class CompleteProfileSerializer(serializers.ModelSerializer):
+    """Updates profile fields after Google Sign-In (replaces old Register fields)."""
     email = serializers.EmailField(required=False, allow_blank=True)
     name_ar = serializers.CharField(required=False, allow_blank=True, max_length=120)
     address = serializers.CharField(required=False, allow_blank=True, max_length=255)
     city = serializers.CharField(required=False, allow_blank=True, max_length=80)
-    # Governorate is REQUIRED on register (UX rule — every Egyptian
-    # account has a home governorate). Accepts only the 27 codes from
-    # apps.users.governorates so we don't accumulate typos like
-    # "Kairo" / "El-Iskandariya" in production data.
     governorate = serializers.ChoiceField(
         choices=[(code, code) for code in GOVERNORATE_CODES],
         required=True,
         error_messages={
             "required": "Please pick your governorate.",
-            "invalid_choice": "Unknown governorate code. "
-                              "Pick one from /api/governorates/.",
+            "invalid_choice": "Unknown governorate code. Pick one from /api/governorates/.",
         },
     )
-    # Override the username field to replace Django's default
-    # UnicodeUsernameValidator — its message ("letters, numbers, and
-    # @/./+/-/_") is opaque to end-users. Our two validators surface
-    # "no spaces" specifically, then the broader character constraint.
-    username = serializers.CharField(
-        max_length=150,
-        validators=[
-            RegexValidator(
-                regex=r"^\S+$",
-                message="Username can't contain spaces. Use letters, "
-                        "numbers, or _ — pick the display name in the "
-                        "separate field.",
-            ),
-            RegexValidator(
-                regex=r"^[A-Za-z0-9_.@+\-]+$",
-                message="Username can only contain letters, numbers, "
-                        "or _ . + - @.",
-            ),
-        ],
-    )
+    phone = serializers.CharField(max_length=20, required=True)
+    is_default = serializers.BooleanField(default=True)
 
     class Meta:
         model = User
         fields = [
-            "username", "name_ar", "email", "phone", "address",
-            "governorate", "city", "password", "role", "avatar",
+            "name_ar", "email", "phone", "address",
+            "governorate", "city", "role", "avatar",
         ]
         extra_kwargs = {
             "avatar": {"required": False, "allow_null": True},
@@ -107,63 +104,46 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate_phone(self, value):
-        if User.objects.filter(phone=value).exists():
-            raise serializers.ValidationError("Phone number is already registered.")
         return value
 
-    def validate_username(self, value):
-        # Character-set validation lives on the field-level validators
-        # above so the friendly "no spaces" message fires first; this
-        # one handles uniqueness.
-        if User.objects.filter(username__iexact=value).exists():
-            raise serializers.ValidationError("Username is already taken.")
-        return value
-
-    def validate_password(self, value):
-        validate_password(value)
-        return value
-
-    def create(self, validated_data):
+    def update(self, instance, validated_data):
         avatar = validated_data.pop("avatar", None)
-        user = User.objects.create_user(
-            username=validated_data["username"],
-            name_ar=validated_data.get("name_ar", ""),
-            email=validated_data.get("email", ""),
-            phone=validated_data["phone"],
-            address=validated_data.get("address", ""),
-            governorate=validated_data.get("governorate", ""),
-            city=validated_data.get("city", ""),
-            password=validated_data["password"],
-            role=validated_data.get("role", User.Role.CLIENT),
-        )
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.profile_completed = True
+        # Workers require admin verification; clients are auto-verified.
+        if instance.role == User.Role.WORKER:
+            instance.verification_status = User.VerificationStatus.PENDING
+        else:
+            instance.verification_status = User.VerificationStatus.VERIFIED
+        instance.save()
         if avatar is not None:
-            user.avatar = avatar
-            user.save(update_fields=["avatar"])
-        return user
+            instance.avatar = avatar
+            instance.save(update_fields=["avatar"])
 
+        # Auto-create a saved Address record so the addresses page isn't empty.
+        address_text = validated_data.get("address", "")
+        if address_text:
+            Address.objects.create(
+                user=instance,
+                label=validated_data.get("city", ""),
+                address=address_text,
+                governorate=validated_data.get("governorate", ""),
+                city=validated_data.get("city", ""),
+                is_default=validated_data.get("is_default", True),
+            )
 
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        user = authenticate(username=data["username"], password=data["password"])
-        if not user:
-            raise serializers.ValidationError("Wrong username or password.")
-        if not user.is_active:
-            raise serializers.ValidationError("This account is disabled.")
-        return {"user": user}
+        return instance
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "username", "name_ar", "email", "phone", "address",
+            "name_ar", "email", "phone", "address",
             "governorate", "city", "avatar",
         ]
         extra_kwargs = {
-            "username": {"required": False},
             "name_ar": {"required": False, "allow_blank": True},
             "email": {"required": False, "allow_blank": True},
             "phone": {"required": False},
@@ -174,27 +154,33 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         }
 
 
-class PasswordChangeSerializer(serializers.Serializer):
-    current_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True, min_length=6)
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    """Used by the admin dashboard to create users manually."""
+    password = serializers.CharField(write_only=True, min_length=6)
 
-    def validate(self, attrs):
-        user = self.context["request"].user
-        if not user.check_password(attrs["current_password"]):
-            raise serializers.ValidationError(
-                {"current_password": "Wrong current password."}
-            )
-        validate_password(attrs["new_password"], user=user)
-        if attrs["current_password"] == attrs["new_password"]:
-            raise serializers.ValidationError(
-                {"new_password": "New password must differ from the current one."}
-            )
-        return attrs
+    class Meta:
+        model = User
+        fields = [
+            "username", "password", "email", "name_ar", "phone",
+            "address", "governorate", "city", "role",
+        ]
 
-    def save(self, **kwargs):
-        user = self.context["request"].user
-        user.set_password(self.validated_data["new_password"])
-        user.save(update_fields=["password"])
+    def validate_role(self, value):
+        if value == User.Role.ADMIN:
+            raise serializers.ValidationError("Cannot create admin users via this endpoint.")
+        return value
+
+    def validate_phone(self, value):
+        if value and User.objects.filter(phone=value).exists():
+            raise serializers.ValidationError("Phone number is already registered.")
+        return value
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        user = User(**validated_data)
+        user.set_password(password)
+        user.profile_completed = True
+        user.save()
         return user
 
 

@@ -11,6 +11,7 @@ abstract class OrderRepository {
     required int workerId,
     required String description,
     String? address,
+    int? addressId,
     String? phone,
     String? urgency,
     double? latitude,

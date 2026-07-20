@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'https://tantawy.pythonanywhere.com/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -38,6 +38,17 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // If the backend says "not admin" (403) on an admin-only endpoint,
+    // the stored token likely belongs to a non-admin user.
+    // Clear stale auth state and force re-login.
+    if (error.response?.status === 403 && originalRequest.url?.includes('/admin/')) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -174,6 +185,8 @@ export const adminAPI = {
     list: (params) => api.get('/admin/workers/', { params }),
     detail: (id) => api.get(`/admin/workers/${id}/`),
     update: (id, data) => api.patch(`/admin/workers/${id}/`, data),
+    verify: (id) => api.post(`/admin/workers/${id}/verify/`),
+    reject: (id, reason) => api.post(`/admin/workers/${id}/reject/`, { reason }),
   },
   exports: {
     orders: () => api.get('/admin/export/orders.csv', { responseType: 'blob' }),

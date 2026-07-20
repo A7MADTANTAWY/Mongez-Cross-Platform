@@ -1,7 +1,8 @@
 import logging
+from datetime import timedelta
 
 from django.db.models import Q
-from datetime import datetime, timezone
+from django.utils import timezone as dj_timezone
 
 from django.conf import settings
 from django.db import transaction
@@ -17,7 +18,7 @@ from apps.payments.models import CommissionPayment
 from apps.payments import paymob
 from apps.users.models import User
 from apps.workers.models import WorkerProfile
-from core.permissions import IsClient, IsWorker
+from core.permissions import IsClient, IsWorker, IsProfileCompleted
 from core.throttling import OrderCreateThrottle
 from .models import Order, OrderAttachment
 from .serializers import (
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 #Helper funcs
 
 def now():
-    return datetime.now(tz=timezone.utc)
+    return dj_timezone.now()
 
 
 def send_notification(user, title, message, notif_type=Notification.IN_APP, data=None):
@@ -81,7 +82,7 @@ def _attachment_kind(name: str) -> str:
 
 #orders views
 class OrderListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_throttles(self):
@@ -215,7 +216,7 @@ class OrderListCreateView(APIView):
 class OrderAttachmentUploadView(APIView):
     """POST /api/orders/<id>/attachments/ — add an attachment after order creation."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, pk):
@@ -265,7 +266,7 @@ class OrderAttachmentUploadView(APIView):
 
 
 class OrderDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     def get(self, request, pk):
         try:
@@ -287,7 +288,7 @@ class OrderDetailView(APIView):
 
 
 class OrderAcceptView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     @transaction.atomic
     def post(self, request, pk):
@@ -346,7 +347,7 @@ class OrderAcceptView(APIView):
 
 class OrderRejectView(APIView):
     """POST /api/orders/{id}/reject/ — worker rejects the order"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     @transaction.atomic
     def post(self, request, pk):
@@ -402,9 +403,14 @@ class OrderCancelView(APIView):
     "Orderer" is the user stored as `Order.client`. That's a real
     customer most of the time, but it can also be a worker who placed
     the order through the "Need a service?" flow on the worker home.
+
+    Cancellation rules:
+      - PENDING    → always allowed (no worker started yet)
+      - ACCEPTED   → allowed only AFTER 1 hour of worker acceptance
+      - otherwise  → blocked
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     @transaction.atomic
     def post(self, request, pk):
@@ -413,7 +419,21 @@ class OrderCancelView(APIView):
         except Order.DoesNotExist:
             return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if order.status != Order.PENDING:
+        if order.status == Order.PENDING:
+            pass  # always allowed
+        elif order.status == Order.ACCEPTED:
+            if order.accepted_at is None:
+                return Response(
+                    {"error": "Cannot cancel — acceptance time is unknown."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            deadline = order.accepted_at + timedelta(hours=1)
+            if dj_timezone.now() < deadline:
+                return Response(
+                    {"error": "You can cancel after 1 hour if the worker has not started."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
             return Response(
                 {"error": f"Cannot cancel an order with status '{order.status}'."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -462,7 +482,7 @@ class OrderCompleteView(APIView):
     "leave a rating" notification.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     @transaction.atomic
     def post(self, request, pk):
@@ -511,7 +531,7 @@ class OrderConfirmCompletionView(APIView):
     `completed_jobs` counter and ask the client for a rating.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     @transaction.atomic
     def post(self, request, pk):

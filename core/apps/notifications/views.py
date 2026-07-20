@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
+from core.permissions import IsProfileCompleted
+
 from .models import DeviceToken, Notification
 from .serializers import DeviceTokenSerializer, NotificationSerializer
 
@@ -13,7 +15,7 @@ class NotificationListView(APIView):
     Query params:
         ?unread=1   only unread notifications
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     def get(self, request):
         qs = Notification.objects.filter(user=request.user)
@@ -24,7 +26,7 @@ class NotificationListView(APIView):
 
 class NotificationUnreadCountView(APIView):
     """GET /api/notifications/unread-count/ — for the bell badge."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     def get(self, request):
         count = Notification.objects.filter(user=request.user, is_read=False).count()
@@ -33,7 +35,7 @@ class NotificationUnreadCountView(APIView):
 
 class NotificationMarkReadView(APIView):
     """POST /api/notifications/{id}/read/ — mark one notification as read"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     def post(self, request, pk):
         try:
@@ -50,7 +52,7 @@ class NotificationMarkReadView(APIView):
 
 class NotificationMarkAllReadView(APIView):
     """POST /api/notifications/read-all/ — mark all notifications as read"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileCompleted]
 
     def post(self, request):
         Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)

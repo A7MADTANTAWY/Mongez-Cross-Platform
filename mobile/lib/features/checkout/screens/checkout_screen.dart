@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mongez/core/app_colors.dart';
+import 'package:mongez/features/checkout/data/models/address_model.dart';
+import 'package:mongez/features/checkout/screens/addresses_screen.dart';
 import 'package:mongez/features/checkout/widgets/attachments_picker.dart';
 import 'package:mongez/features/orders/presentation/cubit/checkout_cubit.dart';
 import 'package:mongez/features/orders/presentation/cubit/customer_orders_cubit.dart';
@@ -25,10 +27,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   bool _useAccountPhone = true;
-  bool _useSavedAddress = true;
   bool _initialized = false;
   String _urgency = 'NORMAL';
   AttachmentBundle _attachments = const AttachmentBundle();
+  AddressModel? _selectedAddress;
 
   @override
   void didChangeDependencies() {
@@ -51,6 +53,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  String _getAddressText() {
+    if (_selectedAddress != null) {
+      return _selectedAddress!.displayAddress;
+    }
+    return _addressController.text;
+  }
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -62,11 +71,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void _placeOrder() {
     if (!_formKey.currentState!.validate()) return;
 
+    final addressText = _getAddressText();
+
     context.read<CheckoutCubit>().createOrder(
       serviceCategory: widget.worker.categoryId ?? 0,
       workerId: widget.worker.userId ?? widget.worker.id,
       description: _descriptionController.text.trim(),
-      address: _useSavedAddress ? null : _addressController.text.trim(),
+      address: addressText.isNotEmpty ? addressText : null,
+      addressId: _selectedAddress?.id,
       phone: _useAccountPhone ? null : _phoneController.text.trim(),
       urgency: _urgency,
       photos: _attachments.photos,
@@ -264,6 +276,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildWorkerCard(ThemeData theme, TextTheme textTheme) {
+    final locale = Localizations.localeOf(context).languageCode;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -290,7 +303,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(widget.worker.username ?? '',
+              Text(widget.worker.nameFor(locale),
                   style: textTheme.titleMedium),
               Text(widget.worker.categoryName ?? '',
                   style: textTheme.bodySmall),
@@ -413,40 +426,73 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Widget _buildAddressField(
       ThemeData theme, TextTheme textTheme, S lang) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildToggleRow(
-          label: lang.useSavedAddress,
-          value: _useSavedAddress,
-          onChanged: (value) {
-            setState(() {
-              _useSavedAddress = value;
-              if (value) {
-                final profileState =
-                    context.read<ProfileCubit>().state;
-                if (profileState is ProfileSuccess) {
-                  _addressController.text =
-                      profileState.profile.address;
-                }
-              }
-            });
-          },
-        ),
-        AnimatedCrossFade(
-          duration: const Duration(milliseconds: 200),
-          crossFadeState: _useSavedAddress
-              ? CrossFadeState.showFirst
-              : CrossFadeState.showSecond,
-          firstChild: _buildReadOnlyField(
-              Icons.location_on_outlined, _addressController.text),
-          secondChild: CustomFormField(
-            controller: _addressController,
-            hintText: lang.addressForOrder,
-            keyboardType: TextInputType.streetAddress,
+    final displayText = _getAddressText();
+    return GestureDetector(
+      onTap: () async {
+        final result = await Navigator.push<AddressModel>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SavedAddressPage(
+              initialSelectedId: _selectedAddress?.id,
+            ),
           ),
+        );
+        if (result != null) {
+          setState(() {
+            _selectedAddress = result;
+            _addressController.text = result.address;
+          });
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ],
+        child: Row(
+          children: [
+            Icon(Icons.location_on_outlined, size: 18,
+                color: theme.textTheme.bodySmall?.color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_selectedAddress != null) ...[
+                    if (_selectedAddress!.label.isNotEmpty)
+                      Text(
+                        _selectedAddress!.label,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    Text(
+                      _selectedAddress!.address,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ] else
+                    Text(
+                      displayText.isEmpty ? lang.tapToSelectAddress : displayText,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: displayText.isEmpty
+                            ? theme.textTheme.bodySmall?.color
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right,
+                color: theme.textTheme.bodySmall?.color),
+          ],
+        ),
+      ),
     );
   }
 }

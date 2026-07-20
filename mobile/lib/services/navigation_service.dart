@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mongez/features/auth/bloc/login_cubit/auth_cubit.dart';
-import 'package:mongez/features/auth/bloc/register_cubit/register_cubit.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mongez/features/auth/bloc/auth_cubit.dart';
 import 'package:mongez/features/auth/models/auth.dart';
-import 'package:mongez/features/auth/screens/get_started_screen.dart';
+import 'package:mongez/features/auth/screens/google_sign_in_screen.dart';
 import 'package:mongez/features/favorites/presentation/cubit/favorites_cubit.dart';
 import 'package:mongez/features/home/bloc/categories_cubit/categories_cubit.dart';
 import 'package:mongez/features/main/screens/main_screen.dart';
@@ -34,10 +34,21 @@ class NavigationService {
     _clearImageCache();
     _resetAllCubits(context);
     final navigator = Navigator.of(context);
+
+    // Sign out from Google
+    try {
+      await GoogleSignIn().signOut();
+    } catch (_) {}
+
     await PrefHelper.clearAll();
 
     navigator.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<AuthCubit>(),
+          child: const GoogleSignInScreen(),
+        ),
+      ),
       (route) => false,
     );
   }
@@ -55,8 +66,7 @@ class NavigationService {
     context.read<JobHistoryCubit>().reset();
     context.read<WorkersCubit>().reset();
     context.read<CategoriesCubit>().reset();
-    context.read<LoginCubit>().reset();
-    context.read<RegisterCubit>().reset();
+    context.read<AuthCubit>().reset();
     context.read<CheckoutCubit>().reset();
     context.read<CreateWorkerProfileCubit>().reset();
     context.read<WorkerStatsCubit>().reset();

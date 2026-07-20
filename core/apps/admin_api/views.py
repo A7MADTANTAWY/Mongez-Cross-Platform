@@ -20,7 +20,7 @@ def _coerce_bool(value):
     return str(value).strip().lower() in {"true", "1", "yes", "on"}
 
 from apps.users.models import User
-from apps.users.serializers import UserSerializer, RegisterSerializer
+from apps.users.serializers import UserSerializer, AdminUserCreateSerializer
 from apps.workers.models import ServiceCategory, WorkerProfile
 from apps.workers.serializers import ServiceCategorySerializer, WorkerProfileSerializer
 from apps.orders.models import Order
@@ -130,7 +130,7 @@ class AdminUserCreateView(APIView):
         if request.user.role != User.Role.ADMIN:
             return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = RegisterSerializer(data=request.data, context={"request": request})
+        serializer = AdminUserCreateSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             user = serializer.save()
             _bust_dashboard_cache()
@@ -318,28 +318,41 @@ class AdminWorkerListView(APIView):
             return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
 
         search = request.query_params.get("search", "")
-        status_filter = (request.query_params.get("status") or "").lower()
+        profile_status = (request.query_params.get("status") or "").lower()
+        verification = (request.query_params.get("verification") or "").lower()
 
         queryset = User.objects.filter(role=User.Role.WORKER)
         if search:
             queryset = queryset.filter(
                 Q(username__icontains=search) | Q(phone__icontains=search)
+                | Q(name_ar__icontains=search) | Q(email__icontains=search)
             )
 
-        # `?status=complete`   → only workers who finished AddService
-        # `?status=incomplete` → registered worker accounts without a profile
-        # (anything else)      → both
-        if status_filter == "complete":
+        # Profile completeness filter
+        if profile_status == "complete":
             queryset = queryset.filter(worker_profile__isnull=False)
-        elif status_filter == "incomplete":
+        elif profile_status == "incomplete":
             queryset = queryset.filter(worker_profile__isnull=True)
 
-        # Counts for the dashboard banner — cheap on this scale.
+        # Verification status filter
+        if verification in ("pending", "verified", "rejected"):
+            queryset = queryset.filter(verification_status=verification)
+
+        # Counts for the dashboard banner
         complete_count = User.objects.filter(
             role=User.Role.WORKER, worker_profile__isnull=False,
         ).count()
         incomplete_count = User.objects.filter(
             role=User.Role.WORKER, worker_profile__isnull=True,
+        ).count()
+        pending_count = User.objects.filter(
+            role=User.Role.WORKER, verification_status=User.VerificationStatus.PENDING,
+        ).count()
+        verified_count = User.objects.filter(
+            role=User.Role.WORKER, verification_status=User.VerificationStatus.VERIFIED,
+        ).count()
+        rejected_count = User.objects.filter(
+            role=User.Role.WORKER, verification_status=User.VerificationStatus.REJECTED,
         ).count()
 
         page = int(request.query_params.get("page", 1))
@@ -349,30 +362,38 @@ class AdminWorkerListView(APIView):
         total = queryset.count()
         users = queryset.order_by("-date_joined")[start:end]
 
-        results = []
+        # Use the same serializer as the mobile app for consistent data.
+        profiles = []
+        profile_user_ids = set()
         for u in users:
             profile = getattr(u, "worker_profile", None)
-            results.append({
-                "id": profile.id if profile else None,
-                "user": UserSerializer(u, context={"request": request}).data,
-                # WorkerProfile.profession is a free-text trade label
-                # ("Plumber", "Electrician", …) — the dashboard treats
-                # it the same way an old `category.name` was used.
-                "profession": profile.profession if profile else "",
-                "profession_ar": profile.profession_ar if profile else "",
-                "description": profile.bio if profile else "",
-                "description_ar": profile.bio_ar if profile else "",
-                "experience_years": profile.experience_years if profile else 0,
-                "average_rating": profile.average_rating if profile else 0.0,
-                "completed_jobs": profile.completed_jobs if profile else 0,
-                "accept_rate": profile.accept_rate if profile else 0.0,
-                "is_available": profile.is_available if profile else False,
-                "is_verified": profile.is_verified if profile else False,
-                "is_featured": profile.is_featured if profile else False,
-                "score": round(profile.calculate_score(), 2) if profile else 0.0,
-                "created_at": profile.created_at.isoformat() if profile and profile.created_at else u.date_joined.isoformat(),
-                "has_profile": profile is not None,
-            })
+            if profile is not None:
+                profiles.append(profile)
+                profile_user_ids.add(u.id)
+
+        serialized_profiles = WorkerProfileSerializer(
+            profiles, many=True, context={"request": request},
+        ).data if profiles else []
+
+        # Build a map of user_id -> serialized profile data.
+        profile_map = {}
+        for item in serialized_profiles:
+            uid = item["user"]["id"] if item.get("user") else None
+            if uid is not None:
+                profile_map[uid] = item
+
+        results = []
+        for u in users:
+            if u.id in profile_map:
+                entry = profile_map[u.id]
+                entry["has_profile"] = True
+            else:
+                entry = {
+                    "id": None,
+                    "user": UserSerializer(u, context={"request": request}).data,
+                    "has_profile": False,
+                }
+            results.append(entry)
 
         return Response({
             "count": total,
@@ -380,6 +401,9 @@ class AdminWorkerListView(APIView):
             "page_size": page_size,
             "complete_count": complete_count,
             "incomplete_count": incomplete_count,
+            "pending_count": pending_count,
+            "verified_count": verified_count,
+            "rejected_count": rejected_count,
             "results": results,
         })
 
@@ -392,43 +416,134 @@ class AdminWorkerDetailView(APIView):
         if request.user.role != User.Role.ADMIN:
             return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
         try:
-            profile = WorkerProfile.objects.select_related("user").get(pk=pk)
-        except WorkerProfile.DoesNotExist:
+            user = User.objects.get(pk=pk, role=User.Role.WORKER)
+            profile = getattr(user, "worker_profile", None)
+        except User.DoesNotExist:
             return Response({"error": "Worker not found."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(WorkerProfileSerializer(profile, context={"request": request}).data)
+
+        if profile:
+            return Response(
+                WorkerProfileSerializer(profile, context={"request": request}).data,
+            )
+        return Response(UserSerializer(user, context={"request": request}).data)
 
     def patch(self, request, pk):
-        """Admin-side worker update: avatar (lives on User), plus a handful
-        of moderation toggles on WorkerProfile. Anything more substantial
-        (profession, bio, rates) belongs on the worker self-edit endpoint
-        so the audit trail stays clean."""
+        """Admin-side worker update: avatar, id_card_image, profile fields,
+        and verification toggles."""
         if request.user.role != User.Role.ADMIN:
             return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
         try:
-            profile = WorkerProfile.objects.select_related("user").get(pk=pk)
-        except WorkerProfile.DoesNotExist:
+            user = User.objects.get(pk=pk, role=User.Role.WORKER)
+        except User.DoesNotExist:
             return Response({"error": "Worker not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Avatar lives on User, not WorkerProfile.
+        # Avatar lives on User.
         avatar = request.FILES.get("avatar")
         if avatar is not None:
-            profile.user.avatar = avatar
-            profile.user.save(update_fields=["avatar"])
+            user.avatar = avatar
 
-        bool_fields = ["is_verified", "is_featured", "is_available"]
-        dirty = []
-        for key in bool_fields:
+        # ID card image lives on User.
+        id_card = request.FILES.get("id_card_image")
+        if id_card is not None:
+            user.id_card_image = id_card
+
+        # Text fields on User.
+        user_text_fields = ["name_ar", "phone", "email", "address", "city", "governorate"]
+        for key in user_text_fields:
             if key in request.data:
-                setattr(profile, key, _coerce_bool(request.data.get(key)))
-                dirty.append(key)
-        if dirty:
-            profile.save(update_fields=dirty)
-        if avatar is not None or dirty:
-            _bust_dashboard_cache()
+                setattr(user, key, request.data.get(key))
+
+        user.save()
+        _bust_dashboard_cache()
+
+        # Also update WorkerProfile fields if profile exists.
+        profile = getattr(user, "worker_profile", None)
+        if profile:
+            profile_text_fields = ["profession", "profession_ar", "bio", "bio_ar", "specialties", "specialties_ar"]
+            for key in profile_text_fields:
+                if key in request.data:
+                    setattr(profile, key, request.data.get(key))
+
+            profile_bool_fields = ["is_verified", "is_featured", "is_available"]
+            dirty = []
+            for key in profile_bool_fields:
+                if key in request.data:
+                    setattr(profile, key, _coerce_bool(request.data.get(key)))
+                    dirty.append(key)
+            if dirty:
+                profile.save(update_fields=dirty)
 
         return Response(
-            WorkerProfileSerializer(profile, context={"request": request}).data,
+            WorkerProfileSerializer(profile, context={"request": request}).data
+            if profile else UserSerializer(user, context={"request": request}).data,
         )
+
+
+class AdminWorkerVerifyView(APIView):
+    """POST /api/admin/workers/<pk>/verify/ — Mark a worker as verified."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        if request.user.role != User.Role.ADMIN:
+            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            user = User.objects.get(pk=pk, role=User.Role.WORKER)
+        except User.DoesNotExist:
+            return Response({"error": "Worker not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        user.verification_status = User.VerificationStatus.VERIFIED
+        user.verified_at = timezone.now()
+        user.verified_by = request.user
+        user.rejection_reason = ""
+        user.save(update_fields=[
+            "verification_status", "verified_at", "verified_by", "rejection_reason",
+        ])
+
+        # Also set is_verified on WorkerProfile if it exists.
+        profile = getattr(user, "worker_profile", None)
+        if profile:
+            profile.is_verified = True
+            profile.save(update_fields=["is_verified"])
+
+        _bust_dashboard_cache()
+        return Response({
+            "message": "Worker verified successfully.",
+            "user": UserSerializer(user, context={"request": request}).data,
+        })
+
+
+class AdminWorkerRejectView(APIView):
+    """POST /api/admin/workers/<pk>/reject/ — Reject a worker with a reason."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        if request.user.role != User.Role.ADMIN:
+            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            user = User.objects.get(pk=pk, role=User.Role.WORKER)
+        except User.DoesNotExist:
+            return Response({"error": "Worker not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        reason = request.data.get("reason", "")
+        user.verification_status = User.VerificationStatus.REJECTED
+        user.rejection_reason = reason
+        user.verified_at = None
+        user.verified_by = None
+        user.save(update_fields=[
+            "verification_status", "rejection_reason", "verified_at", "verified_by",
+        ])
+
+        # Also set is_verified=False on WorkerProfile if it exists.
+        profile = getattr(user, "worker_profile", None)
+        if profile:
+            profile.is_verified = False
+            profile.save(update_fields=["is_verified"])
+
+        _bust_dashboard_cache()
+        return Response({
+            "message": "Worker rejected.",
+            "user": UserSerializer(user, context={"request": request}).data,
+        })
 
 
 class AdminRatingListView(APIView):

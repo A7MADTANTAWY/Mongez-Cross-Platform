@@ -1,18 +1,28 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import PublicRoute from './PublicRoute';
-import LandingPage from '../pages/LandingPage';
-import LoginPage from '../pages/Login';
-import NotFound from '../pages/NotFound';
 import Layout from '../components/layout/Layout';
 import AdminLayout from '../components/admin/AdminLayout';
-import Dashboard from '../pages/admin/Dashboard';
-import Users from '../pages/admin/Users';
-import Workers from '../pages/admin/Workers';
-import Categories from '../pages/admin/Categories';
-import Orders from '../pages/admin/Orders';
-import Ratings from '../pages/admin/Ratings';
+
+const LandingPage = lazy(() => import('../pages/LandingPage'));
+const LoginPage = lazy(() => import('../pages/Login'));
+const NotFound = lazy(() => import('../pages/NotFound'));
+const Dashboard = lazy(() => import('../pages/admin/Dashboard'));
+const Users = lazy(() => import('../pages/admin/Users'));
+const Workers = lazy(() => import('../pages/admin/Workers'));
+const Categories = lazy(() => import('../pages/admin/Categories'));
+const Orders = lazy(() => import('../pages/admin/Orders'));
+const Ratings = lazy(() => import('../pages/admin/Ratings'));
+
+const PageLoader = () => (
+  <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
+    <div className="spinner-border text-primary" role="status">
+      <span className="visually-hidden">Loading...</span>
+    </div>
+  </div>
+);
 
 function UnauthorizedPage() {
   const { logout } = useAuth();
@@ -43,40 +53,41 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<LandingPage />} />
-          </Route>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<LandingPage />} />
+            </Route>
 
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            }
-          />
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              }
+            />
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Dashboard />} />
-            <Route path="users" element={<Users />} />
-            <Route path="workers" element={<Workers />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="orders" element={<Orders />} />
-            <Route path="ratings" element={<Ratings />} />
-          </Route>
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="users" element={<Users />} />
+              <Route path="workers" element={<Workers />} />
+              <Route path="categories" element={<Categories />} />
+              <Route path="orders" element={<Orders />} />
+              <Route path="ratings" element={<Ratings />} />
+            </Route>
 
-          <Route path="/unauthorized" element={<UnauthorizedPage />} />
-
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   );

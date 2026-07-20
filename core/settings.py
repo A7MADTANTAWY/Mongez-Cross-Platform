@@ -2,9 +2,13 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 AUTH_USER_MODEL = "users.User"
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / ".env")
 
 
 def env_bool(name, default=False):
@@ -155,3 +159,6 @@ COMMISSION_AMOUNT = int(os.getenv("COMMISSION_AMOUNT", "20"))
 
 # Firebase Cloud Messaging — empty in dev, push delivery is then a no-op.
 FCM_SERVER_KEY = os.getenv("FCM_SERVER_KEY", "")
+
+# Google OAuth — Web Client ID used to verify id_tokens from the mobile app.
+GOOGLE_WEB_CLIENT_ID = os.getenv("GOOGLE_WEB_CLIENT_ID", "")

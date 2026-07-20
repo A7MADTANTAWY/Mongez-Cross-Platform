@@ -25,6 +25,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m1(name) => "Hello, ${name}!";
 
+  static String m2(time) => "If the worker is late, you can cancel in $time";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "acMaintenance": MessageLookupByLibrary.simpleMessage("AC Maintenance"),
@@ -70,6 +72,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "bookNow": MessageLookupByLibrary.simpleMessage("Book Now"),
     "bookingFee": MessageLookupByLibrary.simpleMessage("Booking Fee"),
     "cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "cancelIn": m2,
     "cancelRequest": MessageLookupByLibrary.simpleMessage("Cancel Request"),
     "cancelRequestConfirm": MessageLookupByLibrary.simpleMessage(
       "Are you sure you want to cancel this request?",
@@ -280,5 +283,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "contactInfo": MessageLookupByLibrary.simpleMessage("Contact Information"),
     "phoneForOrder": MessageLookupByLibrary.simpleMessage("Phone for this order"),
     "addressForOrder": MessageLookupByLibrary.simpleMessage("Address for this order"),
+    "workerLateCancel": MessageLookupByLibrary.simpleMessage("The worker is late — you can now cancel"),
+    "tapToSelectAddress": MessageLookupByLibrary.simpleMessage("Tap to select an address"),
+    "noAddresses": MessageLookupByLibrary.simpleMessage("No addresses yet"),
+    "failedToLoad": MessageLookupByLibrary.simpleMessage("Failed to load"),
+    "retry": MessageLookupByLibrary.simpleMessage("Retry"),
+    "addressDetailsHint": MessageLookupByLibrary.simpleMessage("e.g. 12 Street Name, District"),
   };
 }

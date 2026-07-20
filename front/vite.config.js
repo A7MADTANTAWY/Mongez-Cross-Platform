@@ -15,7 +15,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/media': {
-        target: 'https://tantawy.pythonanywhere.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },

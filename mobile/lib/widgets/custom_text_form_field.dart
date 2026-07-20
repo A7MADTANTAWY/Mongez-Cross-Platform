@@ -6,6 +6,7 @@ class CustomFormField extends StatefulWidget {
   final Widget? preIcon;
   final Widget? sufIcon;
   final bool obscureText;
+  final bool enabled;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
@@ -17,6 +18,7 @@ class CustomFormField extends StatefulWidget {
     this.preIcon,
     this.sufIcon,
     this.obscureText = false,
+    this.enabled = true,
     this.keyboardType,
     this.validator,
     this.onChanged,
@@ -84,6 +86,7 @@ class _CustomFormFieldState extends State<CustomFormField> {
               child: TextField(
                 focusNode: _focusNode,
                 controller: widget.controller,
+                enabled: widget.enabled,
                 obscureText: widget.obscureText,
                 keyboardType: widget.keyboardType,
                 onChanged: (v) {

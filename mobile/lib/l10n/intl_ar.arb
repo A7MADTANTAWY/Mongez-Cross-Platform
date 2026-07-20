@@ -193,5 +193,12 @@
   "rejectedByYou": "تم الرفض بواسطتك",
   "notifications": "الإشعارات",
   "markAllRead": "تحديد الكل كمقروء",
-  "noNotifications": "لا توجد إشعارات حتى الآن"
+  "noNotifications": "لا توجد إشعارات حتى الآن",
+  "cancelIn": "لو الفني اتأخر، تقدر تلغي خلال {time}",
+  "workerLateCancel": "الفني اتأخر — تقدر تلغي دلوقتي",
+  "tapToSelectAddress": "اضغط لاختيار عنوان",
+  "noAddresses": "لا توجد عناوين بعد",
+  "failedToLoad": "فشل التحميل",
+  "retry": "إعادة المحاولة",
+  "addressDetailsHint": "مثال: 12 اسم الشارع, المنطقة"
 }
