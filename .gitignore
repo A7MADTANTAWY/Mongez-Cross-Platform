@@ -1,46 +1,55 @@
-# Backend
-__pycache__/
-**/__pycache__/
-*.py[cod]
+# ── Backend (Django) ────────────────────────────────────────────────────────
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.py[cod]
+backend/**/*.py[cod]
+backend/.env
+backend/.venv/
+backend/venv/
+backend/staticfiles/
+backend/srv_err.log
+backend/srv_out.log
+
+# SQLite is not used in production (PostgreSQL is) — historical files only.
 *.sqlite3
-db.sqlite3
-.env
-.venv/
-venv/
-staticfiles/
-media/
+*.sqlite3-journal
+*.sqlite3.backup*
 
-# Local tooling
-.codex
+# ── Frontend (React) ────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.firebase/
+frontend/.vite/
+frontend/.env
 
-# Archives / scratch
-dashboard.rar
-lastversion/
-_dashboard_unpack/
-
-# Launcher runtime artifacts (start.sh / start.ps1)
-.dashboard.pid
-.dashboard.log
-
-# PlantUML render output — regenerate with plantuml.jar
-docs/mongez-*.svg
-docs/mongez-*.png
-
-# Frontend (dashboard React app)
-front/node_modules/
-front/dist/
-front/.firebase/
-front/.vite/
-
-# Mobile (Flutter)
+# ── Mobile (Flutter) ────────────────────────────────────────────────────────
 mobile/build/
 mobile/.dart_tool/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
+mobile/android/.gradle/
+mobile/android/app/release-key.jks
+mobile/android/key.properties
+mobile/hs_err_pid*.log
+mobile/flutter_log.txt
+mobile/*.jks
 
-# General
-.DS_Store
-*.log
-.idea/
+# ── Deployment (generated output — rebuilt by deployment/scripts/build.*) ──
+deployment/out/
+deployment/scripts/.dashboard.pid
+deployment/scripts/.dashboard.log
+
+# ── Local tooling / IDE ─────────────────────────────────────────────────────
 .vscode/*
+.idea/
+.codex
 *.swp
+
+# ── OS junk ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Logs / temp ─────────────────────────────────────────────────────────────
+*.log
+hs_err_pid*.log
+flutter_log.txt

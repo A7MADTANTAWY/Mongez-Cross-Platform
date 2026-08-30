@@ -80,6 +80,8 @@
   "reviewExample": "The service is fantastic! Very clean, professional, and fast. Highly recommended!",
   "addService": "Add Service",
   "addServiceDesc": "Add a new service you provide",
+  "editService": "Edit Service",
+  "editServiceDesc": "Update your service details",
   "addresses": "Addresses",
   "addressesDesc": "Manage your saved addresses",
   "paymentMethods": "Payment Methods",
@@ -166,6 +168,11 @@
   "createProfile": "Create Profile",
   "profileCreated": "Profile Created",
   "profileCreatedMessage": "Your worker profile has been created successfully.",
+  "serviceUpdatedMessage": "Your service has been updated successfully.",
+  "darkMode": "Dark Mode",
+  "language": "Language",
+  "arabic": "العربية",
+  "english": "English",
   "creatingProfile": "Creating profile...",
   "descriptionHint": "Tell us about your skills and experience",
   "noReviews": "No reviews yet",
@@ -200,5 +207,192 @@
   "noAddresses": "No addresses yet",
   "failedToLoad": "Failed to load",
   "retry": "Retry",
-  "addressDetailsHint": "e.g. 12 Street Name, District"
+  "addressDetailsHint": "e.g. 12 Street Name, District",
+  "welcomeToMongez": "Welcome to Mongez",
+  "signInToContinue": "Sign in to continue",
+  "signInWithGoogle": "Sign in with Google",
+  "googleSignInFailed": "Google sign-in failed",
+  "accountNotApproved": "Account Not Approved",
+  "accountUnderReview": "Account Under Review",
+  "registrationRejected": "Your registration has been rejected.",
+  "registrationUnderReview": "Your registration has been received and is currently being reviewed. We will contact you to complete the verification process and activate your account.",
+  "reason": "Reason:",
+  "needAService": "Need a service?",
+  "welcomeBack": "Welcome back,",
+  "verified": "Verified",
+  "availableDescription": "Available — clients can book you now",
+  "offlineDescription": "Offline — you won't receive new bookings",
+  "finishProfileSetup": "Finish setting up your worker profile",
+  "setupSubtitle": "Pick a service & experience so clients can find you.",
+  "setUp": "Set up",
+  "completedStats": "Completed",
+  "thisMonthCount": "this month: {count}",
+  "@thisMonthCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "awaitingReply": "awaiting your reply",
+  "ratingStats": "Rating",
+  "recentCount": "{count} recent",
+  "@recentCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "myService": "My service",
+  "incomingRequests": "Incoming requests",
+  "newCount": "{count} new",
+  "@newCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "couldNotLoadRequests": "Could not load requests",
+  "noRequestsYet": "No requests yet",
+  "whenClientBooks": "When a client books your service it will land here.",
+  "recentReviews": "Recent reviews",
+  "perHour": "per hour",
+  "availableStatus": "Available",
+  "busyStatus": "Busy",
+  "hourlyRate": "Hourly rate",
+  "callOutFee": "Call-out fee",
+  "avgResponse": "Avg. response",
+  "workingHours": "Working hours",
+  "languages": "Languages",
+  "serviceArea": "Service area",
+  "withinKm": "within {km} km",
+  "@withinKm": {
+    "placeholders": {
+      "km": {}
+    }
+  },
+  "topRated": "Top rated",
+  "completeStats": "Complete",
+  "acceptStats": "Accept",
+  "thisFieldRequired": "This field is required",
+  "phoneTooLong": "Phone number is too long",
+  "addPhotosOrVoice": "Add photos or a voice note to explain the issue",
+  "cancelWithinHour": "You can cancel the order within one hour after the technician accepts.",
+  "notSet": "Not set",
+  "addressLabelHint": "e.g. Home, Office",
+  "governorateHint": "Governorate",
+  "areaDistrictHint": "Area / District (e.g. Al-Haram, Downtown)",
+  "pleasePickGovernorate": "Please pick your governorate",
+  "cameraNotSupported": "Camera not supported on this platform",
+  "couldNotOpenCamera": "Could not open camera",
+  "galleryNotSupported": "Gallery not supported on this platform",
+  "couldNotOpenGallery": "Could not open gallery",
+  "audioNotSupported": "Audio recording is not supported on this platform",
+  "micPermissionDenied": "Microphone permission denied",
+  "micPermissionUnavailable": "Microphone permission unavailable",
+  "couldNotStartRecording": "Could not start recording",
+  "cameraOption": "Camera",
+  "galleryOption": "Gallery",
+  "rerecord": "Re-record",
+  "record": "Record",
+  "voiceNote": "Voice note",
+  "justNow": "Just now",
+  "minutesAgo": "{minutes}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "hoursAgo": "{hours}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {}
+    }
+  },
+  "daysAgo": "{days}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "searchForWorkers": "Search for workers and services",
+  "noResultsFound": "No results found",
+  "filter": "Filter",
+  "allCategories": "All",
+  "minimumRating": "Minimum Rating",
+  "availableOnly": "Available only",
+  "applyFilters": "Apply Filters",
+  "profileUpdated": "Profile updated",
+  "editProfile": "Edit profile",
+  "personal": "Personal",
+  "fullNameHint": "e.g. Ahmed Hassan",
+  "pleaseEnterPhone": "Please enter your phone",
+  "phoneTooShort": "Phone too short",
+  "emailOptional": "Email (optional)",
+  "cityArea": "City / Area",
+  "cityAreaHint": "e.g. Nasr City",
+  "detailedAddress": "Detailed Address",
+  "saving": "Saving…",
+  "saveChanges": "Save changes",
+  "imageNotSupported": "Image picking is not supported on this platform",
+  "failedToPickImage": "Failed to pick image",
+  "profilePhoto": "Profile Photo",
+  "removeOption": "Remove",
+  "scheduledDate": "Scheduled · {date}",
+  "@scheduledDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "acceptedDate": "Accepted: {date}",
+  "@acceptedDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "completedDate": "Completed: {date}",
+  "@completedDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "photosCount": "Photos ({count})",
+  "@photosCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "voiceNotesCount": "Voice notes ({count})",
+  "@voiceNotesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "copiedToClipboard": "{label} copied to clipboard",
+  "@copiedToClipboard": {
+    "placeholders": {
+      "label": {}
+    }
+  },
+  "serviceInProgress": "Service is in progress",
+  "tapToCopy": "Tap to copy",
+  "tapToCopyMaps": "Tap to copy Google Maps link",
+  "enterValidNumber": "Enter a valid number",
+  "mustBeBetween0And50": "Must be between 0 and 50",
+  "failedToSave": "Failed to save",
+  "requestCancelled": "Request to API server was cancelled",
+  "connectionTimeout": "Connection timeout with API server",
+  "receiveTimeout": "Receive timeout in connection with API server",
+  "somethingWentWrong": "Oops! Something went wrong.",
+  "sendTimeout": "Send timeout in connection with API server",
+  "connectionError": "Connection error occurred",
+  "unexpectedError": "Unexpected error occurred",
+  "accountType": "Account Type",
+  "chooseAccountTypeDesc": "Choose whether you are a client or a technician.",
+  "clientRole": "Client",
+  "hireTechnicians": "Hire technicians",
+  "workerRole": "Worker",
+  "provideServices": "Provide services",
+  "workerVerificationNotice": "Your account will be reviewed by an admin before you can start working.",
+  "completeProfileBtn": "Complete Profile",
+  "leaveWithoutCompleting": "Leave without completing?",
+  "leaveWarningDesc": "Your account will be deleted if you leave without completing your profile.",
+  "stay": "Stay",
+  "leave": "Leave"
 }

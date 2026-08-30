@@ -77,11 +77,12 @@ chore(docker): reduce image size with multi-stage build
 ### Adding a new app
 
 ```bash
-# Create the app inside core/apps/
-docker compose exec web python manage.py startapp <name> core/apps/<name>
+# Create the app inside backend/apps/
+cd deployment/docker
+docker compose -p mongez exec web python manage.py startapp <name> /app/apps/<name>
 ```
 
-Register it in `core/settings.py` under `INSTALLED_APPS`:
+Register it in `backend/config/settings.py` under `INSTALLED_APPS`:
 ```python
 'apps.<name>',
 ```
@@ -91,8 +92,9 @@ Register it in `core/settings.py` under `INSTALLED_APPS`:
 Always create and include migrations with your changes:
 
 ```bash
-docker compose exec web python manage.py makemigrations
-docker compose exec web python manage.py migrate
+cd deployment/docker
+docker compose -p mongez exec web python manage.py makemigrations
+docker compose -p mongez exec web python manage.py migrate
 ```
 
 Never edit existing migration files — create new ones instead.
@@ -100,8 +102,9 @@ Never edit existing migration files — create new ones instead.
 ### Running checks locally
 
 ```bash
-docker compose exec web python manage.py check
-docker compose exec web python manage.py test
+cd deployment/docker
+docker compose -p mongez exec web python manage.py check
+docker compose -p mongez exec web python manage.py test
 ```
 
 ---

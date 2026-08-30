@@ -4,10 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mongez/core/constants/api_constants.dart';
 import 'package:mongez/features/auth/bloc/auth_cubit.dart';
-import 'package:mongez/features/auth/screens/complete_profile_screen.dart';
-import 'package:mongez/features/auth/screens/pending_verification_screen.dart';
-import 'package:mongez/services/navigation_service.dart';
-import 'package:mongez/widgets/logo.dart';
+import 'package:mongez/features/worker/profile_setup/presentation/screens/complete_profile_screen.dart';
+import 'package:mongez/features/worker/profile_setup/presentation/screens/pending_verification_screen.dart';
+import 'package:mongez/core/routing/navigation_service.dart';
+import 'package:mongez/generated/l10n.dart';
+import 'package:mongez/core/widgets/logo.dart';
 
 class GoogleSignInScreen extends StatefulWidget {
   const GoogleSignInScreen({super.key});
@@ -25,13 +26,14 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen> {
     final webClientId = ApiConstants.googleClientId;
     _googleSignIn = GoogleSignIn(
       scopes: ['email', 'profile'],
-      clientId: kIsWeb && webClientId.isNotEmpty ? webClientId : null,
+      clientId: kIsWeb ? (webClientId.isNotEmpty ? webClientId : null) : null,
       serverClientId: webClientId.isNotEmpty ? webClientId : null,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = S.of(context);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final tt = theme.textTheme;
@@ -82,13 +84,13 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen> {
                   const Logo(),
                   const SizedBox(height: 24),
                   Text(
-                    'Welcome to Mongez',
+                    lang.welcomeToMongez,
                     textAlign: TextAlign.center,
                     style: tt.displayMedium?.copyWith(fontSize: 28),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Sign in to continue',
+                    lang.signInToContinue,
                     textAlign: TextAlign.center,
                     style: tt.bodyMedium?.copyWith(
                       color: cs.onSurface.withValues(alpha: 0.6),
@@ -101,14 +103,14 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen> {
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton.icon(
-                            onPressed: () => _handleGoogleSignIn(context),
+                            onPressed: () => _handleGoogleSignIn(),
                             icon: const Icon(
                               Icons.g_mobiledata,
                               size: 28,
                               color: Colors.red,
                             ),
-                            label: const Text(
-                              'Sign in with Google',
+                            label: Text(
+                              lang.signInWithGoogle,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -133,7 +135,7 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen> {
     );
   }
 
-  Future<void> _handleGoogleSignIn(BuildContext context) async {
+  Future<void> _handleGoogleSignIn() async {
     try {
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
       if (account == null) return;
@@ -141,19 +143,21 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen> {
       final GoogleSignInAuthentication auth = await account.authentication;
       final String? idToken = auth.idToken;
 
-      if (idToken != null && mounted) {
+      if (!mounted) return;
+      if (idToken != null) {
         context.read<AuthCubit>().signInWithGoogle(idToken: idToken);
       }
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google sign-in failed: $error'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      debugPrint('[AUTH] Google sign-in failed: $error');
+      if (!mounted) return;
+      final lang = S.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(lang.googleSignInFailed),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 }

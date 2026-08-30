@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mongez-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-mongez}
+      POSTGRES_USER: ${DB_USER:-mongez}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mongez_dev_pass}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-mongez} -d ${DB_NAME:-mongez}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/backend/Dockerfile
+    image: mongez-backend:latest
+    container_name: mongez-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../../backend/.env
+    environment:
+      # The web container must reach the `db` service, not 127.0.0.1.
+      DB_ENGINE: django.db.backends.postgresql
+      DB_HOST: db
+      DB_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media_data:/app/media
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/api/health/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  media_data:

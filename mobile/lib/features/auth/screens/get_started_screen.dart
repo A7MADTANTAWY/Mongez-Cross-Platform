@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mongez/core/helpers.dart';
+import 'package:mongez/core/utils/app_prefs.dart';
 import 'package:mongez/features/auth/bloc/auth_cubit.dart';
 import 'package:mongez/features/auth/screens/google_sign_in_screen.dart';
 import 'package:mongez/features/auth/screens/onboarding/onboarding_screen.dart';
 import 'package:mongez/generated/l10n.dart';
-import 'package:mongez/widgets/custom_button.dart';
-import 'package:mongez/widgets/logo.dart';
+import 'package:mongez/core/widgets/custom_button.dart';
+import 'package:mongez/core/widgets/logo.dart';
 
 class GetStartedScreen extends StatefulWidget {
   const GetStartedScreen({super.key});

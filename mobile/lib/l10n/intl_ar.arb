@@ -64,7 +64,7 @@
   "book": "احجز",
   "edit": "تعديل",
   "searchHint": "ابحث عن ما تريده",
-  "home": "الرئيسية",
+  "home": "المنزل",
   "favorites": "المفضلة",
   "jobHistory": "سجل الأعمال",
   "requests": "الطلبات",
@@ -80,6 +80,8 @@
   "reviewExample": "الخدمة ممتازة جدًا! نظيفة واحترافية وسريعة. أنصح بها بشدة!",
   "addService": "إضافة خدمة",
   "addServiceDesc": "أضف خدمة جديدة تقدمها",
+  "editService": "تعديل الخدمة",
+  "editServiceDesc": "حدّث تفاصيل الخدمة اللي بتقدمها",
   "addresses": "العناوين",
   "addressesDesc": "إدارة العناوين المحفوظة",
   "paymentMethods": "طرق الدفع",
@@ -166,6 +168,11 @@
   "createProfile": "إنشاء الملف الشخصي",
   "profileCreated": "تم إنشاء الملف الشخصي",
   "profileCreatedMessage": "تم إنشاء ملفك الشخصي كفني بنجاح.",
+  "serviceUpdatedMessage": "تم تحديث خدمتك بنجاح.",
+  "darkMode": "الوضع الليلي",
+  "language": "اللغة",
+  "arabic": "العربية",
+  "english": "English",
   "creatingProfile": "جارٍ إنشاء الملف الشخصي...",
   "descriptionHint": "أخبرنا عن مهاراتك وخبراتك",
   "noReviews": "لا توجد تقييمات بعد",
@@ -200,5 +207,192 @@
   "noAddresses": "لا توجد عناوين بعد",
   "failedToLoad": "فشل التحميل",
   "retry": "إعادة المحاولة",
-  "addressDetailsHint": "مثال: 12 اسم الشارع, المنطقة"
+  "addressDetailsHint": "مثال: 12 اسم الشارع, المنطقة",
+  "welcomeToMongez": "مرحبًا بيك في منجز",
+  "signInToContinue": "سجل دخولك عشان تكمل",
+  "signInWithGoogle": "تسجيل الدخول بـ Google",
+  "googleSignInFailed": "فشل تسجيل الدخول بـ Google",
+  "accountNotApproved": "الحساب غير معتمد",
+  "accountUnderReview": "الحسابقيد المراجعة",
+  "registrationRejected": "تم رفض تسجيلك.",
+  "registrationUnderReview": "تم استلام تسجيلك وهو قيد المراجعة. هنتواصل معاك عشان نكمل عملية التفعيل.",
+  "reason": "السبب:",
+  "needAService": "محتاج خدمة؟",
+  "welcomeBack": "أهلاً بعودتك،",
+  "verified": "موثق",
+  "availableDescription": "متاح — العملاء ممكن يحجزوا عندك دلوقتي",
+  "offlineDescription": "غير متاح — مش هتستقبل حجوزات جديدة",
+  "finishProfileSetup": "كمّل إعداد ملفك الشخصي",
+  "setupSubtitle": "اختار خدمة وخبرة عشان العملاء يقدروا يلاقوك.",
+  "setUp": "إعداد",
+  "completedStats": "مكتمل",
+  "thisMonthCount": "هذا الشهر: {count}",
+  "@thisMonthCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "awaitingReply": "بانتظار ردك",
+  "ratingStats": "التقييم",
+  "recentCount": "{count} حديث",
+  "@recentCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "myService": "خدمتي",
+  "incomingRequests": "الطلبات الواردة",
+  "newCount": "{count} جديد",
+  "@newCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "couldNotLoadRequests": "مش قادرة تحميل الطلبات",
+  "noRequestsYet": "لا توجد طلبات بعد",
+  "whenClientBooks": "لما عميل يحجز خدمتك هتظهر هنا.",
+  "recentReviews": "التقييمات الحديثة",
+  "perHour": "بالساعة",
+  "availableStatus": "متاح",
+  "busyStatus": "مشغول",
+  "hourlyRate": "الأجر بالساعة",
+  "callOutFee": "رسوم التنقل",
+  "avgResponse": "متوسط الاستجابة",
+  "workingHours": "ساعات العمل",
+  "languages": "اللغات",
+  "serviceArea": "منطقة الخدمة",
+  "withinKm": "خلال {km} كم",
+  "@withinKm": {
+    "placeholders": {
+      "km": {}
+    }
+  },
+  "topRated": "الأعلى تقييمًا",
+  "completeStats": "مكتمل",
+  "acceptStats": "مقبول",
+  "thisFieldRequired": "هذا الحقل مطلوب",
+  "phoneTooLong": "رقم الهاتف طويل جدًا",
+  "addPhotosOrVoice": "أضف صور أو ملاحظة صوتية لشرح المشكلة",
+  "cancelWithinHour": "تقدر تلغي الطلب خلال ساعة واحدة بعد ما الفني يقبل.",
+  "notSet": "غير محدد",
+  "addressLabelHint": "مثال: البيت، المكتب",
+  "governorateHint": "المحافظة",
+  "areaDistrictHint": "المنطقة (مثال: Haram, Downtown)",
+  "pleasePickGovernorate": "من فضلك اختر المحافظة",
+  "cameraNotSupported": "الكاميرا غير مدعومة على هذا الجهاز",
+  "couldNotOpenCamera": "مش قادرة أفتح الكاميرا",
+  "galleryNotSupported": "المعرض غير مدعوم على هذا الجهاز",
+  "couldNotOpenGallery": "مش قادرة أفتح المعرض",
+  "audioNotSupported": "تسجيل الصوت غير مدعوم على هذا الجهاز",
+  "micPermissionDenied": "تم رفض إذن الميكروفون",
+  "micPermissionUnavailable": "إذن الميكروفون غير متاح",
+  "couldNotStartRecording": "مش قادرة أبدأ التسجيل",
+  "cameraOption": "الكاميرا",
+  "galleryOption": "المعرض",
+  "rerecord": "إعادة التسجيل",
+  "record": "تسجيل",
+  "voiceNote": "ملاحظة صوتية",
+  "justNow": "الآن",
+  "minutesAgo": "منذ {minutes} د",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "hoursAgo": "منذ {hours} س",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {}
+    }
+  },
+  "daysAgo": "منذ {days} ي",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "searchForWorkers": "ابحث عن فنيين وخدمات",
+  "noResultsFound": "لا توجد نتائج",
+  "filter": "تصفية",
+  "allCategories": "الكل",
+  "minimumRating": "أدنى تقييم",
+  "availableOnly": "المتاح فقط",
+  "applyFilters": "تطبيق الفلاتر",
+  "profileUpdated": "تم تحديث الملف الشخصي",
+  "editProfile": "تعديل الملف الشخصي",
+  "personal": "شخصي",
+  "fullNameHint": "مثال: أحمد حسن",
+  "pleaseEnterPhone": "من فضلك أدخل رقم الهاتف",
+  "phoneTooShort": "رقم الهاتف قصير جدًا",
+  "emailOptional": "البريد الإلكتروني (اختياري)",
+  "cityArea": "المدينة / المنطقة",
+  "cityAreaHint": "مثال: مدينة نصر",
+  "detailedAddress": "العنوان التفصيلي",
+  "saving": "جارٍ الحفظ...",
+  "saveChanges": "حفظ التغييرات",
+  "imageNotSupported": "اختيار الصور غير مدعوم على هذا الجهاز",
+  "failedToPickImage": "فشل اختيار الصورة",
+  "profilePhoto": "الصورة الشخصية",
+  "removeOption": "إزالة",
+  "scheduledDate": "مجدول · {date}",
+  "@scheduledDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "acceptedDate": "مقبول: {date}",
+  "@acceptedDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "completedDate": "مكتمل: {date}",
+  "@completedDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "photosCount": "صور ({count})",
+  "@photosCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "voiceNotesCount": "ملاحظات صوتية ({count})",
+  "@voiceNotesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "copiedToClipboard": "تم نسخ {label} إلى الحافظة",
+  "@copiedToClipboard": {
+    "placeholders": {
+      "label": {}
+    }
+  },
+  "serviceInProgress": "الخدمة قيد التنفيذ",
+  "tapToCopy": "اضغط للنسخ",
+  "tapToCopyMaps": "اضغط لنسخ رابط خرائط Google",
+  "enterValidNumber": "أدخل رقمًا صالحًا",
+  "mustBeBetween0And50": "يجب أن يكون بين 0 و 50",
+  "failedToSave": "فشل الحفظ",
+  "requestCancelled": "تم إلغاء الطلب من السيرفر",
+  "connectionTimeout": "انتهت مهلة الاتصال بالسيرفر",
+  "receiveTimeout": "انتهت مهلة الاستلام من السيرفر",
+  "somethingWentWrong": "حدث خطأ ما!",
+  "sendTimeout": "انتهت مهلة الإرسال إلى السيرفر",
+  "connectionError": "حدث خطأ في الاتصال",
+  "unexpectedError": "حدث خطأ غير متوقع",
+  "accountType": "نوع الحساب",
+  "chooseAccountTypeDesc": "اختار إذا كنت عميل أو فني.",
+  "clientRole": "عميل",
+  "hireTechnicians": "استقدام فنيين",
+  "workerRole": "فني",
+  "provideServices": "تقديم خدمات",
+  "workerVerificationNotice": "حسابك هيتراجع من المدير قبل ما تقدر تشتغل.",
+  "completeProfileBtn": "إكمال الملف الشخصي",
+  "leaveWithoutCompleting": "تسيب من غير ما تكمل؟",
+  "leaveWarningDesc": "حسابك هيتمسح لو مشيت من غير ما تكمل الملف الشخصي.",
+  "stay": "أبقى",
+  "leave": "أمشي"
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mongez/core/app_colors.dart';
+import 'package:mongez/core/theme/app_colors.dart';
 
 class CustomIndicator extends StatelessWidget {
   final bool active;

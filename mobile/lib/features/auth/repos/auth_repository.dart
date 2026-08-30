@@ -1,12 +1,12 @@
-import 'dart:typed_data';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mongez/core/constants/api_constants.dart';
 import 'package:mongez/core/constants/endpoints.dart';
-import 'package:mongez/errors/failure.dart';
+import 'package:mongez/core/error/failure.dart';
 import 'package:mongez/features/auth/models/auth.dart';
-import 'package:mongez/services/api_service.dart';
-import 'package:mongez/services/helper.dart';
+import 'package:mongez/core/network/api_service.dart';
+import 'package:mongez/core/utils/pref_helper.dart';
 
 class AuthRepository {
   final ApiService apiService;
@@ -18,7 +18,14 @@ class AuthRepository {
   }) async {
     try {
       // Use a plain Dio without auth interceptor to avoid stale-token 401s.
-      final plainDio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+      final plainDio = Dio(
+        BaseOptions(
+          baseUrl: ApiConstants.baseUrl,
+          connectTimeout: ApiConstants.connectTimeout,
+          receiveTimeout: ApiConstants.receiveTimeout,
+          sendTimeout: ApiConstants.sendTimeout,
+        ),
+      );
       final response = await plainDio.post(
         Endpoints.googleSignIn,
         data: {"id_token": idToken},
@@ -36,9 +43,9 @@ class AuthRepository {
 
       return right(auth);
     } catch (e) {
-      print('[AUTH ERROR] signInWithGoogle: $e');
+      debugPrint('[AUTH ERROR] signInWithGoogle: $e');
       if (e is DioException) {
-        print('[AUTH ERROR] Response data: ${e.response?.data}');
+        debugPrint('[AUTH ERROR] Response data: ${e.response?.data}');
         return left(ServerFailure.fromDioException(e));
       }
       return left(ServerFailure(errorMessage: e.toString()));

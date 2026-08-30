@@ -53,5 +53,7 @@
 	<string>Mongez uses your microphone to record voice notes describing the issue.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Mongez uses your location to find nearby workers and route them to you.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Mongez uses Face ID to securely verify your identity when signing in.</string>
 </dict>
 </plist>

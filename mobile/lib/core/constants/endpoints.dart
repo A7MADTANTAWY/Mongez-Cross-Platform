@@ -22,9 +22,7 @@ class Endpoints {
   static const String workersMe = 'workers/me/';
   static const String workersMyStats = 'workers/me/stats/';
   static String workerById(int id) => 'workers/$id/';
-  static const String workerMyRatings = 'workers/me/';
   static String workerRatings(int id) => 'ratings/worker/$id/';
-  static String workerStats(int id) => 'workers/$id/stats/';
 
   // ── Orders ──
   static const String orders = 'orders/';
@@ -49,6 +47,7 @@ class Endpoints {
 
   // ── Notifications ──
   static const String notifications = 'notifications/';
+  static const String notificationsUnreadCount = 'notifications/unread-count/';
   static String notificationRead(int id) => 'notifications/$id/read/';
   static const String notificationsReadAll = 'notifications/read-all/';
 }

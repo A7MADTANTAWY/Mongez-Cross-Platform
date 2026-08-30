@@ -1,0 +1,15 @@
+# Mongez backend — Hostinger (Apache/Passenger app root)
+#
+# Django is served via Passenger using backend/passenger_wsgi.py as the entry
+# point (single source of truth). This .htaccess disables directory listing
+# and protects sensitive dotfiles. The API and /media/ are served by Django.
+#
+# How requests flow on Hostinger:
+#   public_html/  ->  static React build (see deployment/hostinger/frontend/.htaccess)
+#   app root      ->  Django via Passenger (entry: backend/passenger_wsgi.py)
+
+Options -Indexes
+
+<FilesMatch "^\.env|^env\.json|\.pyc$">
+  Require all denied
+</FilesMatch>

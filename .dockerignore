@@ -6,14 +6,14 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Local secrets and DBs (always built from the .env supplied at run time)
-.env
-db.sqlite3
-db.sqlite3-journal
+# Local secrets and DBs (env is supplied at run time via docker-compose env_file)
+backend/.env
+*.sqlite3
+*.sqlite3-journal
 
-# Outputs
-media/
-staticfiles/
+# Outputs — regenerated at image build time (collectstatic)
+backend/media/
+backend/staticfiles/
 
 # VCS + tooling
 .git/
@@ -29,7 +29,11 @@ docs/
 *.md
 *.log
 
-# The Flutter app — it's not built or served by this image
+# Deployment configuration — not served by the backend image itself
+deployment/
+
+# Other applications — the backend image does not build/serve these
+frontend/
 mobile/
 
 # OS junk

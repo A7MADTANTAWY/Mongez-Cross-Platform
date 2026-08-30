@@ -21,6 +21,8 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "8.11.1" apply false
     id("com.google.gms.google-services") version "4.4.2" apply false
+    // Pin a recent Kotlin for the KGP used by Flutter's built-in Kotlin support.
+    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
 }
 
 include(":app")

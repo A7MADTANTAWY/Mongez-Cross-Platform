@@ -1,14 +1,20 @@
 class ApiConstants {
   ApiConstants._();
 
-  // Linux desktop / iOS sim / web: localhost. Android emulator: 10.0.2.2.
-  // Physical device: your machine's LAN IP (and add it to DJANGO_ALLOWED_HOSTS).
-  static const String baseUrl = 'http://192.168.1.9:8000/api/';
-  static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
-  static const Duration sendTimeout = Duration(seconds: 30);
+  /// Production: pass via --dart-define=API_BASE_URL=https://your-domain.com/api/
+  /// Dev:        defaults to local LAN IP for physical-device testing.
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://192.168.1.9:8000/api/',
+  );
 
-  /// Google Web Client ID.
-  static const String googleClientId =
-    '945925867568-hkrej6riemi1arcahijktfi47vchbieb.apps.googleusercontent.com';
+  static const Duration connectTimeout = Duration(seconds: 10);
+  static const Duration receiveTimeout = Duration(seconds: 15);
+  static const Duration sendTimeout = Duration(seconds: 15);
+
+  /// Google Web Client ID – passed via --dart-define for each build flavor.
+  static const String googleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+    defaultValue: '945925867568-hkrej6riemi1arcahijktfi47vchbieb.apps.googleusercontent.com',
+  );
 }

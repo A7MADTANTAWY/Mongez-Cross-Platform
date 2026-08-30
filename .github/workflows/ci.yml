@@ -16,6 +16,10 @@ jobs:
       DJANGO_DEBUG: "true"
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
 
+    defaults:
+      run:
+        working-directory: backend
+
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +28,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: backend/requirements.txt
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -45,18 +50,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Build from the repo root so the Dockerfile (deployment/docker/backend/)
+      # can COPY backend/ as the source of truth.
       - name: Build image
-        run: docker build -t mongez-backend:${{ github.sha }} .
+        run: |
+          docker build -t mongez-backend:${{ github.sha }} \
+            -f deployment/docker/backend/Dockerfile .
 
       - name: Smoke test container
         run: |
-          cp .env.example .env
-          echo "DJANGO_DEBUG=true" >> .env
-          echo "DJANGO_SECRET_KEY=ci-smoke-test" >> .env
-          docker compose up -d
+          cp backend/.env.example backend/.env
+          echo "DJANGO_DEBUG=true" >> backend/.env
+          echo "DJANGO_SECRET_KEY=ci-smoke-test" >> backend/.env
+          docker compose -f deployment/docker/docker-compose.yml -p mongez up -d
           sleep 5
           curl --retry 5 --retry-delay 2 --fail http://localhost:8000/api/auth/login/ -X POST \
             -H "Content-Type: application/json" \
             -d '{}' || true
-          docker compose logs web
-          docker compose down
+          docker compose -f deployment/docker/docker-compose.yml -p mongez logs web
+          docker compose -f deployment/docker/docker-compose.yml -p mongez down

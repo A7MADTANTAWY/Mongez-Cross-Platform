@@ -36,9 +36,9 @@ actor "Admin"       as admin
 
 rectangle "Mongez Platform" #ecf0f1 {
   rectangle "Flutter mobile app\n(mobile/)" as mobile #DDF1FA
-  rectangle "React + Vite SPA\n(front/) — landing + admin" as front #DDF1FA
-  rectangle "Django REST API\n(core/)" as api #B6E2F5
-  database  "SQLite\n(db.sqlite3,\nnamed volume)" as db #FFFFFF
+  rectangle "React + Vite SPA\n(frontend/) — landing + admin" as front #DDF1FA
+  rectangle "Django REST API\n(backend/)" as api #B6E2F5
+  database  "PostgreSQL\n(external service)" as db #FFFFFF
 }
 
 cloud "Paymob" as paymob
@@ -71,7 +71,7 @@ skinparam ArrowColor #3498db
 package "Docker container: mongez-backend" #ecf0f1 {
   component "Gunicorn (2 workers)"       as gunicorn
   component "entrypoint.sh\n(migrate → exec gunicorn)" as entry
-  package "Django project (core/)" {
+  package "Django project (backend/config + apps)" {
     component "settings.py"               as settings
     component "urls.py"                   as urls
     component "middleware\n(CORS, WhiteNoise,\nsecurity, sessions, CSRF)" as mw
@@ -86,7 +86,7 @@ package "Docker container: mongez-backend" #ecf0f1 {
       component "admin_api"      as a_admin
     }
   }
-  database  "/app/data/db.sqlite3"  as db_vol
+  database  "PostgreSQL\nexternal service"  as db_vol
   folder    "/app/media\n(uploads)" as media_vol
 }
 
@@ -97,7 +97,7 @@ package "Flutter mobile app" #DDF1FA {
   component "features/*\n(auth, home, workers,\norders, favorites, …)" as m_features
 }
 
-package "React dashboard (front/)" #DDF1FA {
+package "React dashboard (frontend/)" #DDF1FA {
   component "main.jsx" as f_main
   component "AuthContext\n(JWT in localStorage)" as f_auth
   component "AppRoutes\n(Protected/PublicRoute)" as f_routes
@@ -284,7 +284,7 @@ skinparam SequenceArrowColor #3498db
 skinparam ActorBorderColor  #2c3e50
 
 actor "User" as u
-participant "Dashboard SPA\n(front/)" as ui
+participant "Dashboard SPA\n(frontend/)" as ui
 participant "axios api\n(/services/api.js)" as ax
 participant "Django /api/auth/login/" as login
 participant "/api/users/me/"         as me
@@ -368,7 +368,7 @@ participant "axios api"              as ax
 participant "/api/admin/dashboard/"  as ep
 participant "apps.admin_api views"   as views
 participant "Django ORM"             as orm
-database    "SQLite"                 as db
+database    "PostgreSQL"             as db
 
 a -> ui : open /admin/dashboard
 ui -> ax : GET /api/admin/dashboard/ (Bearer JWT)

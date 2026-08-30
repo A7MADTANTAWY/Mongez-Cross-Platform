@@ -1,0 +1,34 @@
+# Dev override — auto-loaded by `docker compose` alongside docker-compose.yml.
+#
+# What it changes vs. the base file:
+#   • Exposes PostgreSQL's 5432 to the host so local tools (psql, Django
+#     outside Docker) can reach the same database the container uses.
+#   • Bind-mounts ./media so uploaded files land in the repo, not in a hidden
+#     named volume.
+#   • Bind-mounts source code (../../backend/config, apps, manage.py,
+#     entrypoint.sh) so edits on the host are visible to the container WITHOUT
+#     rebuilding the image.
+#   • Sets RELOAD=1 so Gunicorn restarts workers when a .py file changes.
+#
+# To temporarily disable this override (run as production-style):
+#     docker compose -f docker-compose.yml up -d
+#
+# Volumes section is intentionally minimal — the named volumes from the base
+# file (pg_data, media_data) stay defined but are unused while this
+# override is active.
+
+services:
+  db:
+    ports:
+      - "5432:5432"
+  web:
+    environment:
+      RELOAD: "1"
+    volumes:
+      # Uploaded media
+      - ../../backend/media:/app/media
+      # Source code — edits reflect immediately (with RELOAD=1)
+      - ../../backend/config:/app/config
+      - ../../backend/apps:/app/apps
+      - ../../backend/manage.py:/app/manage.py
+      - ../../backend/entrypoint.sh:/app/entrypoint.sh

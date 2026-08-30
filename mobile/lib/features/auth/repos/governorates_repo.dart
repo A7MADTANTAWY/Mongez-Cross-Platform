@@ -1,9 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:mongez/core/constants/endpoints.dart';
-import 'package:mongez/errors/failure.dart';
+import 'package:mongez/core/error/failure.dart';
 import 'package:mongez/features/auth/models/governorate.dart';
-import 'package:mongez/services/api_service.dart';
+import 'package:mongez/core/network/api_service.dart';
 
 /// Loads the 27 Egyptian governorates from the backend (single source
 /// of truth, see apps/users/governorates.py). Cached in-memory after
@@ -12,6 +12,9 @@ import 'package:mongez/services/api_service.dart';
 class GovernoratesRepo {
   final ApiService apiService;
   GovernoratesRepo(this.apiService);
+
+  /// The only governorate currently supported by the app.
+  static const String supportedGovernorateCode = 'beni_suef';
 
   List<Governorate>? _cache;
 
@@ -30,5 +33,15 @@ class GovernoratesRepo {
       }
       return left(ServerFailure(errorMessage: e.toString()));
     }
+  }
+
+  /// Only [supportedGovernorateCode] is offered to the user.
+  Future<Either<Failure, List<Governorate>>> getSupportedGovernorates() async {
+    final result = await getGovernorates();
+    return result.map(
+      (list) => list
+          .where((g) => g.code == supportedGovernorateCode)
+          .toList(growable: false),
+    );
   }
 }
