@@ -1,0 +1,70 @@
+# Mongez backend - Render Blueprint
+#
+# Deploys ONLY the Django backend (backend/). The React dashboard and Flutter
+# app are built/served elsewhere; this service publishes the REST API.
+#
+# Render injects RENDER=1 and RENDER_EXTERNAL_HOSTNAME automatically; Django's
+# settings (config/settings.py) use them to enable production hardening and to
+# allow the service's own hostname.
+#
+# Required secrets (set in Render dashboard or via envVars below):
+#   DJANGO_SECRET_KEY  - generate one (Render can auto-generate it)
+#   DATABASE_URL       - from a Render PostgreSQL (or any Postgres) instance
+#
+# Do NOT put real secrets in this file. `generateValue: true` makes Render
+# create a random value on first deploy and keep it thereafter.
+
+services:
+  - type: web
+    name: mongez-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    # Run migrations after the build but before the service starts. If the DB
+    # is unreachable during the build, collectstatic still succeeds; only the
+    # deploy step fails, so we never ship a running app against stale schema.
+    preDeployCommand: python manage.py migrate --noinput
+    healthCheckPath: /api/health/
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: false
+      - key: DJANGO_ENV
+        value: production
+      - key: DJANGO_TIME_ZONE
+        value: UTC
+      # Comma-separated hosts beyond the auto-injected Render hostname
+      # (e.g. the dashboard domain). The Render hostname is added automatically.
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ""
+      # Comma-separated origins (e.g. https://dashboard.mongez.com).
+      # The Render origin https://<RENDER_EXTERNAL_HOSTNAME> is added automatically.
+      - key: CORS_ALLOWED_ORIGINS
+        value: ""
+      - key: CSRF_TRUSTED_ORIGINS
+        value: ""
+      # Security / HTTPS hardening (see docs/RENDER.md).
+      - key: DJANGO_SECURE_SSL_REDIRECT
+        value: "true"
+      - key: DJANGO_SECURE_PROXY_SSL_HEADER
+        value: "true"
+      - key: DJANGO_SESSION_COOKIE_SECURE
+        value: "true"
+      - key: DJANGO_CSRF_COOKIE_SECURE
+        value: "true"
+    disk:
+      # Render's filesystem is ephemeral; do NOT rely on it for permanent
+      # user uploads (media/). Add an object-storage-backed Django storage
+      # backend for production uploads. See docs/RENDER.md > Media Storage.
+      name: mongez-media
+      mountPath: /opt/render/project/src/backend/media
+      sizeGB: 1
+databases:
+  - name: mongez-db
+    plan: free
+    databaseName: mongez
+    user: mongez
+    # Render sets DATABASE_URL automatically on the linked web service.

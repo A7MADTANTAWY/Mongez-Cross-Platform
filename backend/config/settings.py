@@ -1,7 +1,9 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 AUTH_USER_MODEL = "users.User"
@@ -23,9 +25,49 @@ def env_list(name, default=""):
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-local-dev-key-change-me")
-DEBUG = env_bool("DJANGO_DEBUG", default=True)
+def parse_database_url(url):
+    """Parse a postgres://USER:PASS@HOST:PORT/NAME URL into Django DB kwargs."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("postgres", "postgresql"):
+        raise ImproperlyConfigured(
+            f"Unsupported DATABASE_URL scheme '{parsed.scheme}'. Use postgres://"
+        )
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed.path.lstrip("/"),
+        "USER": unquote(parsed.username or ""),
+        "PASSWORD": unquote(parsed.password or ""),
+        "HOST": parsed.hostname or "",
+        "PORT": str(parsed.port) if parsed.port else "",
+    }
+
+
+# --- Render / environment detection ---------------------------------------
+# Render injects RENDER=1 and RENDER_EXTERNAL_HOSTNAME for every service.
+IS_RENDER = env_bool("RENDER", default=False)
+DJANGO_ENV = os.getenv("DJANGO_ENV", "production" if IS_RENDER else "development").lower()
+
+# SECRET_KEY -- NEVER hardcode a real value in code. A dev-only fallback is
+# allowed so `manage.py` works locally without a .env; in any production
+# environment (Render/Hostinger) DJANGO_SECRET_KEY MUST be provided or Django
+# fails to start rather than silently shipping a weak key.
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+if SECRET_KEY is None:
+    if DJANGO_ENV == "production":
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY must be set in production (set it on Render)."
+        )
+    SECRET_KEY = "django-insecure-local-dev-key-change-me"
+
+# DEBUG is False by default in production; local dev keeps True unless overridden.
+DEBUG = env_bool("DJANGO_DEBUG", default=(DJANGO_ENV != "production"))
+
+# ALLOWED_HOSTS -- merged from the env list plus RENDER_EXTERNAL_HOSTNAME when
+# running on Render. No '*' is ever used in production.
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,10.0.2.2,mongez.digital")
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 INSTALLED_APPS = [
@@ -78,16 +120,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
-        'NAME': os.getenv("DB_NAME", "mongez"),
-        'USER': os.getenv("DB_USER", "mongez"),
-        'PASSWORD': os.getenv("DB_PASSWORD", ""),
-        'HOST': os.getenv("DB_HOST", "127.0.0.1"),
-        'PORT': os.getenv("DB_PORT", "5432"),
+# --- Database --------------------------------------------------------------
+# Priority: DATABASE_URL (Production / Render) -> per-variable DB_* (Local /
+# Docker / Hostinger). If DATABASE_URL is set it fully determines the DB and
+# overrides DB_*; otherwise the individual DB_* variables are used unchanged,
+# preserving the existing local, Docker and Hostinger behaviour.
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+
+if DATABASE_URL:
+    DATABASES = {"default": parse_database_url(DATABASE_URL)}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+            'NAME': os.getenv("DB_NAME", "mongez"),
+            'USER': os.getenv("DB_USER", "mongez"),
+            'PASSWORD': os.getenv("DB_PASSWORD", ""),
+            'HOST': os.getenv("DB_HOST", "127.0.0.1"),
+            'PORT': os.getenv("DB_PORT", "5432"),
+        }
     }
-}
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -155,6 +207,33 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = env_bool("CORS_ALLOW_ALL_ORIGINS", default=DEBUG)
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+
+# On Render, automatically trust the service's own origin for CORS + CSRF so
+# the browsable API and any same-origin page work out of the box. The env vars
+# (CORS_ALLOWED_ORIGINS / CSRF_TRUSTED_ORIGINS) remain the source of truth for
+# cross-origin access (e.g. the frontend dashboard); this only appends the
+# Render origin and never removes anything the operator configured.
+if IS_RENDER and RENDER_EXTERNAL_HOSTNAME:
+    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if render_origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(render_origin)
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
+
+
+# --- Security / HTTPS ------------------------------------------------------
+# Production hardening flags, all opt-in via env and OFF by default so local
+# HTTP development and the existing Hostinger (Apache) setup keep working.
+# On Render the secure-cookie / SSL and proxy header flags should be enabled.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if env_bool(
+    "DJANGO_SECURE_PROXY_SSL_HEADER", default=IS_RENDER
+) else None
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
+SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", default=IS_RENDER)
+CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", default=IS_RENDER)
+SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
+SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", default=False)
 
 PAYMOB_API_KEY = os.getenv("PAYMOB_API_KEY", "")
 PAYMOB_INTEGRATION_ID = int(os.getenv("PAYMOB_INTEGRATION_ID", "0"))
