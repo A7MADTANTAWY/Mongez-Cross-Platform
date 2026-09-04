@@ -1,0 +1,8 @@
+# Nixpacks configuration for Railway
+# Railway deploys the Django backend from the `backend/` directory.
+# Migrations run on every start (idempotent), then Gunicorn serves the app.
+# `$PORT` and `$DATABASE_URL` are injected by Railway automatically.
+
+providers = ["python"]
+
+start = "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60"
