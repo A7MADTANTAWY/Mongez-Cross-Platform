@@ -26,12 +26,8 @@ services:
     runtime: python
     plan: free
     rootDir: backend
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    buildCommand: pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput
     startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
-    # Run migrations after the build but before the service starts. If the DB
-    # is unreachable during the build, collectstatic still succeeds; only the
-    # deploy step fails, so we never ship a running app against stale schema.
-    preDeployCommand: python manage.py migrate --noinput
     healthCheckPath: /api/health/
     envVars:
       - key: DJANGO_SECRET_KEY
