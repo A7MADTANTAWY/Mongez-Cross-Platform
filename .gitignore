@@ -7,6 +7,7 @@ backend/.env
 backend/.venv/
 backend/venv/
 backend/staticfiles/
+backend/media/
 backend/srv_err.log
 backend/srv_out.log
 
@@ -28,6 +29,8 @@ mobile/.dart_tool/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/android/.gradle/
+mobile/android/app/build.gradle?*~
+mobile/android/build/
 mobile/android/app/release-key.jks
 mobile/android/key.properties
 mobile/hs_err_pid*.log

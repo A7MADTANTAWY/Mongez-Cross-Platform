@@ -64,7 +64,7 @@ DEBUG = env_bool("DJANGO_DEBUG", default=(DJANGO_ENV != "production"))
 
 # ALLOWED_HOSTS -- merged from the env list plus RENDER_EXTERNAL_HOSTNAME when
 # running on Render. No '*' is ever used in production.
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,10.0.2.2,mongez.digital")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,10.0.2.2,mongez.digital,10.179.240.131")
 RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
 if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -74,7 +74,9 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     "corsheaders",
     'rest_framework',
     'rest_framework_simplejwt',
@@ -170,6 +172,21 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Cloudinary — used for media file storage in production (Render).
+# On Render, set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and
+# CLOUDINARY_API_SECRET in the service environment. Locally, Django falls
+# back to the local MEDIA_ROOT filesystem when the env vars are empty.
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET', ''),
+}
+DEFAULT_FILE_STORAGE = (
+    'cloudinary_storage.storage.MediaCloudinaryStorage'
+    if os.getenv('CLOUDINARY_CLOUD_NAME')
+    else 'django.core.files.storage.FileSystemStorage'
+)
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
@@ -219,6 +236,15 @@ if IS_RENDER and RENDER_EXTERNAL_HOSTNAME:
         CORS_ALLOWED_ORIGINS.append(render_origin)
     if render_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(render_origin)
+
+# Allow the frontend Static Site (Render, e.g. the React dashboard). Set
+# FRONTEND_URL in the Render service env to the https URL of the dashboard.
+FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
+if FRONTEND_URL:
+    if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+    if FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
 
 
 # --- Security / HTTPS ------------------------------------------------------

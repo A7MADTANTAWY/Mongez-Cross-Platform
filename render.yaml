@@ -1,20 +1,26 @@
-# Mongez backend - Render Blueprint
+# Mongez Render Blueprint
 #
-# Deploys ONLY the Django backend (backend/). The React dashboard and Flutter
-# app are built/served elsewhere; this service publishes the REST API.
+# Deploys BOTH the Django backend (backend/) and the React admin dashboard
+# (frontend/) on Render. The Flutter mobile app is built/served elsewhere and
+# configured to point at the API URL.
 #
 # Render injects RENDER=1 and RENDER_EXTERNAL_HOSTNAME automatically; Django's
-# settings (config/settings.py) use them to enable production hardening and to
+#    settings (config/settings.py) use them to enable production hardening and to
 # allow the service's own hostname.
 #
 # Required secrets (set in Render dashboard or via envVars below):
 #   DJANGO_SECRET_KEY  - generate one (Render can auto-generate it)
 #   DATABASE_URL       - from a Render PostgreSQL (or any Postgres) instance
+#   CLOUDINARY_*       - CloudName / API Key / API Secret for media storage
 #
 # Do NOT put real secrets in this file. `generateValue: true` makes Render
-# create a random value on first deploy and keep it thereafter.
+# create a random value on first deploy and keep it thereafter. Cloudinary
+# keys use `sync: false` so you enter them manually from the Render dashboard.
 
 services:
+  # --------------------------------------------------------------------------
+  # Backend: Django REST API
+  # --------------------------------------------------------------------------
   - type: web
     name: mongez-api
     runtime: python
@@ -37,31 +43,67 @@ services:
       - key: DJANGO_TIME_ZONE
         value: UTC
       # Comma-separated hosts beyond the auto-injected Render hostname
-      # (e.g. the dashboard domain). The Render hostname is added automatically.
+      # (e.g. a custom domain). The Render hostname is added automatically.
       - key: DJANGO_ALLOWED_HOSTS
         value: ""
-      # Comma-separated origins (e.g. https://dashboard.mongez.com).
-      # The Render origin https://<RENDER_EXTERNAL_HOSTNAME> is added automatically.
+      # Comma-separated origins (e.g. a custom dashboard domain) in addition to
+      # the Render origin and FRONTEND_URL below. The Render origin and the
+      # dashboard URL are appended automatically by settings.py.
       - key: CORS_ALLOWED_ORIGINS
         value: ""
       - key: CSRF_TRUSTED_ORIGINS
         value: ""
-      # Security / HTTPS hardening (see docs/RENDER.md).
-      - key: DJANGO_SECURE_SSL_REDIRECT
-        value: "true"
-      - key: DJANGO_SECURE_PROXY_SSL_HEADER
-        value: "true"
-      - key: DJANGO_SESSION_COOKIE_SECURE
-        value: "true"
-      - key: DJANGO_CSRF_COOKIE_SECURE
-        value: "true"
-    disk:
-      # Render's filesystem is ephemeral; do NOT rely on it for permanent
-      # user uploads (media/). Add an object-storage-backed Django storage
-      # backend for production uploads. See docs/RENDER.md > Media Storage.
-      name: mongez-media
-      mountPath: /opt/render/project/src/backend/media
-      sizeGB: 1
+      - key: FRONTEND_URL
+        value: https://mongez-admin.onrender.com
+      # PostgreSQL connection. Render injects the full DATABASE_URL from the
+      # linked mongez-db database below.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mongez-db
+          property: connectionString
+      # Cloudinary keys for media storage. `sync: false` disables Render
+      # auto-sync so you set these manually with real values after first deploy.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      # Google OAuth — Web Client ID used to verify id_tokens from the mobile app.
+      - key: GOOGLE_WEB_CLIENT_ID
+        sync: false
+      # Paymob / FCM are optional; leave unset until you configure them.
+      - key: PAYMOB_API_KEY
+        sync: false
+      - key: PAYMOB_INTEGRATION_ID
+        sync: false
+      - key: PAYMOB_HMAC_SECRET
+        sync: false
+      - key: FCM_SERVER_KEY
+        sync: false
+
+  # --------------------------------------------------------------------------
+  # Frontend: React admin dashboard (static site)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: mongez-admin
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    # VITE_* vars are embedded at build time by Vite, so they must be set here
+    # (not at runtime) and trigger a rebuild when the URL changes.
+    envVars:
+      - key: VITE_API_URL
+        value: https://mongez-api.onrender.com
+    # React Router (client-side) — rewrite every path to index.html so hard
+    # refreshes on /admin/users, etc. don't return 404.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
 databases:
   - name: mongez-db
     plan: free
