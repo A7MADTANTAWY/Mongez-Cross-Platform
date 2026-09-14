@@ -28,9 +28,5 @@ COPY . .
 
 EXPOSE 8000
 
-# Run migrate + collectstatic + gunicorn at startup (not build time).
-# collectstatic is deferred to startup so WhiteNoise doesn't fail on
-# missing .map source-map files during the Docker build layer.
-CMD python manage.py migrate --noinput \
-    && python manage.py collectstatic --noinput \
-    && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+# Shell form so $PORT is expanded by /bin/sh at startup.
+CMD python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
