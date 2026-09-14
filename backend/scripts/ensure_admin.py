@@ -10,7 +10,7 @@ from apps.users.models import User
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@mongez.com")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "MongezAdmin123!")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
 
 if not User.objects.filter(username=ADMIN_USERNAME).exists():
     user = User.objects.create_superuser(
