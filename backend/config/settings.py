@@ -269,7 +269,7 @@ if IS_RAILWAY and RAILWAY_PUBLIC_DOMAIN:
 
 # Allow the frontend Static Site (Render, e.g. the React dashboard). Set
 # FRONTEND_URL in the Render service env to the https URL of the dashboard.
-FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
+FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
 if FRONTEND_URL:
     if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
         CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
