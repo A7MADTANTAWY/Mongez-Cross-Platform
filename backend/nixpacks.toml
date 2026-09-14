@@ -4,7 +4,6 @@
 
 providers = ["python"]
 
-# Railpack may not have `pip` in PATH — use `python3 -m pip` as a safe fallback.
 setup = "apt-get update && apt-get install -y --no-install-recommends libjpeg62-turbo zlib1g curl && rm -rf /var/lib/apt/lists/*"
 
 build = "python3 -m pip install --upgrade pip && python3 -m pip install -r requirements.txt"

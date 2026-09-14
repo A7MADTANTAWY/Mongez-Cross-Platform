@@ -26,12 +26,11 @@ RUN pip install -r requirements.txt
 # Copy the backend source.
 COPY . .
 
-# Collect static at build time (needs SECRET_KEY but not DB).
-RUN DJANGO_SECRET_KEY=build-time-placeholder \
-    DJANGO_DEBUG=false \
-    python manage.py collectstatic --noinput
-
 EXPOSE 8000
 
-# Railway uses nixpacks/railpack start command from settings or Dockerfile CMD.
-CMD gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+# Run migrate + collectstatic + gunicorn at startup (not build time).
+# collectstatic is deferred to startup so WhiteNoise doesn't fail on
+# missing .map source-map files during the Docker build layer.
+CMD python manage.py migrate --noinput \
+    && python manage.py collectstatic --noinput \
+    && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
