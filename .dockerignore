@@ -32,9 +32,9 @@ docs/
 # Deployment configuration — not served by the backend image itself
 deployment/
 
-# Other applications — the backend image does not build/serve these
-frontend/
-mobile/
+# Other applications — not needed in backend image (backend Dockerfile copies explicitly)
+# frontend/ and mobile/ intentionally NOT excluded here so Railway Railpack
+# can build them as separate services from the same monorepo.
 
 # OS junk
 .DS_Store
