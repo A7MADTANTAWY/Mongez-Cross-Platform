@@ -7,7 +7,8 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PORT=8000
 
 WORKDIR /app
 
@@ -26,7 +27,9 @@ RUN pip install -r requirements.txt
 # Copy the backend source.
 COPY . .
 
+# Make entrypoint executable.
+RUN chmod +x entrypoint-railway.sh
+
 EXPOSE 8000
 
-# Shell form so $PORT is expanded by /bin/sh at startup.
-CMD python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+ENTRYPOINT ["./entrypoint-railway.sh"]

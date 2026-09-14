@@ -1,6 +1,5 @@
-# Nixpacks configuration for Railway
-# Railway deploys the Django backend from the `backend/` directory.
-# `$PORT` and `$DATABASE_URL` are injected by Railway automatically.
+# Nixpacks/Railpack configuration for Railway
+# Fallback if Dockerfile is not used.
 
 providers = ["python"]
 
@@ -8,4 +7,5 @@ setup = "apt-get update && apt-get install -y --no-install-recommends libjpeg62-
 
 build = "python3 -m pip install --upgrade pip && python3 -m pip install -r requirements.txt"
 
-start = "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60"
+# Use entrypoint script so $PORT is expanded by bash even in Railpack.
+start = "bash entrypoint-railway.sh"
