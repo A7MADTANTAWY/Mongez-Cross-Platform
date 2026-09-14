@@ -8,6 +8,16 @@ echo "DATABASE_URL set: $([ -n \"$DATABASE_URL\" ] && echo 'yes' || echo 'no')"
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
+echo "Ensuring admin user exists..."
+python manage.py shell -c "
+from apps.users.models import User
+if not User.objects.filter(username='admin').exists():
+    User.objects.create_superuser('admin', 'admin@mongez.com', 'MongezAdmin123!', role='admin', is_active=True)
+    print('Admin user created.')
+else:
+    print('Admin user already exists.')
+"
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
