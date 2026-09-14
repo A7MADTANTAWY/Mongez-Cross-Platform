@@ -23,4 +23,4 @@ RUN chmod +x entrypoint-railway.sh
 
 EXPOSE 8000
 
-ENTRYPOINT ["bash", "entrypoint-railway.sh"]
+CMD ["bash", "-c", "python manage.py migrate --noinput && python manage.py ensure_admin && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 60 --access-logfile - --error-logfile -"]
