@@ -42,10 +42,22 @@ def parse_database_url(url):
     }
 
 
-# --- Render / environment detection ---------------------------------------
+# --- Render / Railway / environment detection ------------------------------
 # Render injects RENDER=1 and RENDER_EXTERNAL_HOSTNAME for every service.
+# Railway injects RAILWAY_PROJECT_ID / RAILWAY_SERVICE_NAME and, once a public
+# domain is generated, RAILWAY_PUBLIC_DOMAIN. Both platforms are treated as
+# production so DEBUG defaults to False and DJANGO_SECRET_KEY is required.
 IS_RENDER = env_bool("RENDER", default=False)
-DJANGO_ENV = os.getenv("DJANGO_ENV", "production" if IS_RENDER else "development").lower()
+IS_RAILWAY = bool(
+    os.getenv("RAILWAY_PROJECT_ID")
+    or os.getenv("RAILWAY_SERVICE_NAME")
+    or os.getenv("RAILWAY_ENVIRONMENT")
+    or os.getenv("RAILWAY_PUBLIC_DOMAIN")
+)
+DJANGO_ENV = os.getenv(
+    "DJANGO_ENV",
+    "production" if (IS_RENDER or IS_RAILWAY) else "development",
+).lower()
 
 # SECRET_KEY -- NEVER hardcode a real value in code. A dev-only fallback is
 # allowed so `manage.py` works locally without a .env; in any production
@@ -55,7 +67,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if SECRET_KEY is None:
     if DJANGO_ENV == "production":
         raise ImproperlyConfigured(
-            "DJANGO_SECRET_KEY must be set in production (set it on Render)."
+            "DJANGO_SECRET_KEY must be set in production (set it on Render/Railway)."
         )
     SECRET_KEY = "django-insecure-local-dev-key-change-me"
 
@@ -73,6 +85,10 @@ if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
 RAILWAY_PUBLIC_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
 if RAILWAY_PUBLIC_DOMAIN and RAILWAY_PUBLIC_DOMAIN not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+# Railway healthcheck probes come from healthcheck.railway.app; Django must
+# allow this hostname or the probe is rejected with DisallowedHost.
+if IS_RAILWAY and "healthcheck.railway.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("healthcheck.railway.app")
 
 
 INSTALLED_APPS = [
@@ -173,7 +189,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -242,6 +258,15 @@ if IS_RENDER and RENDER_EXTERNAL_HOSTNAME:
     if render_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(render_origin)
 
+# Same for Railway: once a public domain exists, trust it for CORS + CSRF so
+# the browsable API and same-origin requests work without manual vars.
+if IS_RAILWAY and RAILWAY_PUBLIC_DOMAIN:
+    railway_origin = f"https://{RAILWAY_PUBLIC_DOMAIN}"
+    if railway_origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(railway_origin)
+    if railway_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(railway_origin)
+
 # Allow the frontend Static Site (Render, e.g. the React dashboard). Set
 # FRONTEND_URL in the Render service env to the https URL of the dashboard.
 FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
@@ -255,13 +280,14 @@ if FRONTEND_URL:
 # --- Security / HTTPS ------------------------------------------------------
 # Production hardening flags, all opt-in via env and OFF by default so local
 # HTTP development and the existing Hostinger (Apache) setup keep working.
-# On Render the secure-cookie / SSL and proxy header flags should be enabled.
+# On Render/Railway the secure-cookie / SSL and proxy header flags are on by
+# default (both platforms terminate TLS at their edge proxy).
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if env_bool(
-    "DJANGO_SECURE_PROXY_SSL_HEADER", default=IS_RENDER
+    "DJANGO_SECURE_PROXY_SSL_HEADER", default=(IS_RENDER or IS_RAILWAY)
 ) else None
 SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
-SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", default=IS_RENDER)
-CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", default=IS_RENDER)
+SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", default=(IS_RENDER or IS_RAILWAY))
+CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", default=(IS_RENDER or IS_RAILWAY))
 SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "0"))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
 SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", default=False)
