@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +21,14 @@ class PrefHelper {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(key);
     }
-    return _secureStorage.read(key: key);
+    try {
+      return await _secureStorage.read(key: key).timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => null,
+          );
+    } catch (_) {
+      return null;
+    }
   }
 
   static Future<void> _write(String key, String value) async {

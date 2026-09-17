@@ -412,6 +412,7 @@ class OrderRejectView(APIView):
             order.client,
             title=title,
             message=message,
+            notif_type=Notification.PUSH,
         )
         return Response(OrderSerializer(order, context={"request": request}).data)
 
@@ -486,6 +487,7 @@ class OrderCancelView(APIView):
                 order.worker,
                 title=title,
                 message=message,
+                notif_type=Notification.PUSH,
             )
         return Response(OrderSerializer(order, context={"request": request}).data)
 

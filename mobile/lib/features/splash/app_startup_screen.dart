@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,11 +35,26 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
   }
 
   Future<void> _checkAuth() async {
-    String? token = await PrefHelper.getToken();
+    // Hard timeout: if _checkAuth doesn't finish in 8s, force-navigate.
+    Timer(const Duration(seconds: 8), () {
+      if (mounted) _goToAuthFlow();
+    });
+
+    String? token;
+    try {
+      token = await PrefHelper.getToken().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => null,
+          );
+    } catch (_) {
+      token = null;
+    }
+
     if (token == null || token.isEmpty) {
       _goToAuthFlow();
       return;
     }
+    final savedToken = token;
     try {
       final profileRepo = getIt.get<ProfileRepository>();
       // Add a 5s timeout so the splash never hangs on a slow/bad token.
@@ -53,7 +70,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
           await PrefHelper.clearAll();
           _goToAuthFlow();
         },
-        (profile) => _goToProfileOrMain(profile, token),
+        (profile) => _goToProfileOrMain(profile, savedToken),
       );
     } catch (_) {
       await PrefHelper.clearAll();
