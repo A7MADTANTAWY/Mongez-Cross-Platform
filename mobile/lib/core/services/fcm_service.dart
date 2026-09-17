@@ -11,6 +11,9 @@ Future<void> onBackgroundMessage(RemoteMessage message) async {
   developer.log('FCM background: ${message.messageId}', name: 'FCM');
 }
 
+const _channelId = 'mongez_notifications';
+const _channelName = 'Mongez Notifications';
+
 class FcmService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -24,25 +27,52 @@ class FcmService {
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidSettings);
-    await _localNotifications.initialize(initSettings);
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (details) {
+        developer.log('Notification tapped: ${details.payload}', name: 'FCM');
+      },
+    );
+
+    // Create channel with HIGH importance for heads-up banners
+    final androidPlugin =
+        _localNotifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _channelId,
+          _channelName,
+          description: 'Order and service notifications',
+          importance: Importance.high,
+          enableVibration: true,
+          playSound: true,
+        ),
+      );
+    }
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
 
-    const androidDetails = AndroidNotificationDetails(
-      'mongez_channel',
-      'Mongez Notifications',
+    final androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
       channelDescription: 'Order and service notifications',
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
+      icon: '@mipmap/ic_launcher',
+      styleInformation: BigTextStyleInformation(
+        notification.body ?? '',
+        contentTitle: notification.title,
+      ),
     );
-    const details = NotificationDetails(android: androidDetails);
+    final details = NotificationDetails(android: androidDetails);
 
     await _localNotifications.show(
-      notification.hashCode,
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
       notification.title,
       notification.body,
       details,

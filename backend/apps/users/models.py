@@ -128,6 +128,12 @@ class User(AbstractUser):
         default="en",
         help_text="Preferred language for notifications.",
     )
+    google_picture_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Google profile picture URL (not stored locally).",
+    )
 
     REQUIRED_FIELDS = ["email"]
 

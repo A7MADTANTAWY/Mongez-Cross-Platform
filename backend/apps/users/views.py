@@ -120,18 +120,9 @@ class GoogleSignInView(APIView):
                 user.name_ar = name
             user.save(update_fields=["email", "name_ar"])
 
-        if picture and not user.avatar:
-            try:
-                img_data = urllib.request.urlopen(picture, timeout=10).read()
-                ext = "jpg"
-                if "png" in picture:
-                    ext = "png"
-                elif "webp" in picture:
-                    ext = "webp"
-                filename = f"google_avatar_{google_sub}.{ext}"
-                user.avatar.save(filename, ContentFile(img_data), save=True)
-            except Exception as e:
-                logger.warning(f"[GOOGLE AUTH] Failed to download Google avatar: {e}")
+        if picture and not user.google_picture_url:
+            user.google_picture_url = picture
+            user.save(update_fields=["google_picture_url"])
 
         return Response(
             {

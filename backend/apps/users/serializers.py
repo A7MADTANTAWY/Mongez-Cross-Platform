@@ -29,16 +29,18 @@ class UserSerializer(serializers.ModelSerializer):
             "profile_completed",
             "average_rating", "completed_jobs", "worker_id",
             "verification_status", "id_card_url",
-            "verified_at", "rejection_reason", "language",
+            "verified_at", "rejection_reason", "language", "google_picture_url",
         ]
         read_only_fields = fields
 
     def get_avatar_url(self, obj):
-        if not obj.avatar:
-            return None
-        request = self.context.get("request") if hasattr(self, "context") else None
-        url = obj.avatar.url
-        return request.build_absolute_uri(url) if request else url
+        if obj.avatar:
+            request = self.context.get("request") if hasattr(self, "context") else None
+            url = obj.avatar.url
+            return request.build_absolute_uri(url) if request else url
+        if obj.google_picture_url:
+            return obj.google_picture_url
+        return None
 
     def get_id_card_url(self, obj):
         if not obj.id_card_image:
