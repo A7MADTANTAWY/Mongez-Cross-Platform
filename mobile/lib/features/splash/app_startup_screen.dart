@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mongez/core/di/services_locator.dart';
 import 'package:mongez/core/network/api_service.dart';
 import 'package:mongez/core/routing/navigation_service.dart';
+import 'package:mongez/core/services/fcm_service.dart';
 import 'package:mongez/core/utils/pref_helper.dart';
 import 'package:mongez/features/auth/bloc/auth_cubit.dart';
 import 'package:mongez/features/auth/models/auth.dart';
@@ -13,6 +14,7 @@ import 'package:mongez/features/shared/profile/data/models/profile_model.dart';
 import 'package:mongez/features/shared/profile/domain/profile_repository.dart';
 import 'package:mongez/features/worker/profile_setup/presentation/screens/complete_profile_screen.dart';
 import 'package:mongez/features/worker/profile_setup/presentation/screens/pending_verification_screen.dart';
+import 'package:mongez/main.dart' show fcmService;
 
 class AppStartupScreen extends StatefulWidget {
   const AppStartupScreen({super.key});
@@ -63,6 +65,9 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
   }
 
   void _goToProfileOrMain(ProfileModel profile, String token) {
+    // Register FCM token now that we have an auth token.
+    fcmService.registerWithBackend(getIt.get<ApiService>());
+
     final user = User(
       id: profile.id,
       username: profile.username,

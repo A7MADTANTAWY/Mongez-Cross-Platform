@@ -35,7 +35,7 @@ android {
             val propsFile = rootProject.file("key.properties")
             if (propsFile.exists()) {
                 props.load(propsFile.inputStream())
-                storeFile = file("app/${props["storeFile"]}")
+                storeFile = rootProject.file("app/${props["storeFile"]}")
                 storePassword = props["storePassword"] as String
                 keyAlias = props["keyAlias"] as String
                 keyPassword = props["keyPassword"] as String

@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mongez/core/constants/api_constants.dart';
+import 'package:mongez/core/di/services_locator.dart';
+import 'package:mongez/core/network/api_service.dart';
 import 'package:mongez/features/auth/bloc/auth_cubit.dart';
 import 'package:mongez/features/worker/profile_setup/presentation/screens/complete_profile_screen.dart';
 import 'package:mongez/features/worker/profile_setup/presentation/screens/pending_verification_screen.dart';
 import 'package:mongez/core/routing/navigation_service.dart';
 import 'package:mongez/generated/l10n.dart';
 import 'package:mongez/core/widgets/logo.dart';
+import 'package:mongez/main.dart' show fcmService;
 
 class GoogleSignInScreen extends StatefulWidget {
   const GoogleSignInScreen({super.key});
@@ -41,6 +44,7 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
+          fcmService.registerWithBackend(getIt.get<ApiService>());
           final profileCompleted = state.auth.profileCompleted ?? false;
           final verificationStatus = state.auth.verificationStatus ?? 'verified';
 

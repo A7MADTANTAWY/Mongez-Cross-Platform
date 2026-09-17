@@ -7,19 +7,19 @@ import 'package:mongez/core/network/api_service.dart';
 
 /// Background message handler – must be a top-level function.
 @pragma('vm:entry-point')
-Future<void> _onBackgroundMessage(RemoteMessage message) async {
+Future<void> onBackgroundMessage(RemoteMessage message) async {
   developer.log('FCM background: ${message.messageId}', name: 'FCM');
 }
 
 class FcmService {
-  final ApiService _api;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  String? _pendingToken;
+  ApiService? _api;
 
-  FcmService(this._api);
+  FcmService();
 
-  /// Call once after login / app start.
-  Future<void> init() async {
-    // Request permission (iOS + Android 13+)
+  /// Request permission + get token. Safe to call at startup (no auth needed).
+  Future<void> requestPermissionAndGetToken() async {
     final settings = await _messaging.requestPermission(
       alert: true,
       badge: true,
@@ -28,51 +28,49 @@ class FcmService {
     developer.log('FCM permission: ${settings.authorizationStatus}',
         name: 'FCM');
 
-    // Get token
     final token = await _messaging.getToken();
     if (token != null) {
-      await _registerToken(token);
+      _pendingToken = token;
+      developer.log('FCM token obtained (pending registration)', name: 'FCM');
     }
 
-    // Listen for token refresh
-    _messaging.onTokenRefresh.listen(_registerToken);
+    _messaging.onTokenRefresh.listen((newToken) {
+      _pendingToken = newToken;
+      _tryRegisterToken();
+    });
 
-    // Foreground messages
-    FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+    FirebaseMessaging.onMessage.listen((message) {
+      developer.log('FCM foreground: ${message.notification?.title}',
+          name: 'FCM');
+    });
 
-    // Background tap (app in background, user taps notification)
-    FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      developer.log('FCM opened app: ${message.data}', name: 'FCM');
+    });
 
-    // Terminated state tap
     final initial = await _messaging.getInitialMessage();
     if (initial != null) {
-      _onMessageOpenedApp(initial);
+      developer.log('FCM terminated tap: ${initial.data}', name: 'FCM');
     }
 
-    // Register background handler
-    FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
+    FirebaseMessaging.onBackgroundMessage(onBackgroundMessage);
   }
 
-  void _onForegroundMessage(RemoteMessage message) {
-    developer.log('FCM foreground: ${message.notification?.title}',
-        name: 'FCM');
-    // In-app notification is handled by the notification list polling.
-    // You can show a local snackbar/toast here if desired.
+  /// Call after login so we have an auth token to register the device.
+  void registerWithBackend(ApiService api) {
+    _api = api;
+    _tryRegisterToken();
   }
 
-  void _onMessageOpenedApp(RemoteMessage message) {
-    developer.log('FCM opened app: ${message.data}', name: 'FCM');
-    // Deep-link navigation can be handled here using message.data['order_id'] etc.
-  }
-
-  Future<void> _registerToken(String token) async {
+  Future<void> _tryRegisterToken() async {
+    if (_pendingToken == null || _api == null) return;
     try {
       final platform = Platform.isAndroid ? 'android' : 'ios';
-      await _api.post(
+      await _api!.post(
         endPoint: Endpoints.deviceTokens,
-        body: {'token': token, 'platform': platform},
+        body: {'token': _pendingToken, 'platform': platform},
       );
-      developer.log('FCM token registered', name: 'FCM');
+      developer.log('FCM token registered with backend', name: 'FCM');
     } catch (e) {
       developer.log('FCM token register failed: $e', name: 'FCM');
     }
