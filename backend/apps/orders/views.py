@@ -352,7 +352,8 @@ class OrderAcceptView(APIView):
 
         # Notify client
         title, message = t(order.client, "order_accepted",
-            username=request.user.username, order_id=order.id)
+            username=request.user.name_ar or request.user.display_name or request.user.username,
+            order_id=order.id)
         send_notification(
             order.client,
             title=title,
