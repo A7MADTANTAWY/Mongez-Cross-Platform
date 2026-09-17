@@ -44,7 +44,7 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          fcmService.registerWithBackend(getIt.get<ApiService>());
+          fcmService.initAfterLogin(getIt.get<ApiService>());
           final profileCompleted = state.auth.profileCompleted ?? false;
           final verificationStatus = state.auth.verificationStatus ?? 'verified';
 

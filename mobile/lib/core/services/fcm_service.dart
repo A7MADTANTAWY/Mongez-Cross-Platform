@@ -5,7 +5,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:mongez/core/constants/endpoints.dart';
 import 'package:mongez/core/network/api_service.dart';
 
-/// Background message handler – must be a top-level function.
 @pragma('vm:entry-point')
 Future<void> onBackgroundMessage(RemoteMessage message) async {
   developer.log('FCM background: ${message.messageId}', name: 'FCM');
@@ -13,30 +12,41 @@ Future<void> onBackgroundMessage(RemoteMessage message) async {
 
 class FcmService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  String? _pendingToken;
+  String? _fcmToken;
   ApiService? _api;
 
   FcmService();
 
-  /// Request permission + get token. Safe to call at startup (no auth needed).
-  Future<void> requestPermissionAndGetToken() async {
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    developer.log('FCM permission: ${settings.authorizationStatus}',
-        name: 'FCM');
+  /// Call after login: request permission, get token, register with backend.
+  Future<void> initAfterLogin(ApiService api) async {
+    _api = api;
 
-    final token = await _messaging.getToken();
-    if (token != null) {
-      _pendingToken = token;
-      developer.log('FCM token obtained (pending registration)', name: 'FCM');
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      developer.log('FCM permission: ${settings.authorizationStatus}',
+          name: 'FCM');
+    } catch (e) {
+      developer.log('FCM permission failed: $e', name: 'FCM');
+    }
+
+    try {
+      final token = await _messaging.getToken();
+      if (token != null) {
+        _fcmToken = token;
+        developer.log('FCM token: $token', name: 'FCM');
+        await _registerToken(token);
+      }
+    } catch (e) {
+      developer.log('FCM getToken failed: $e', name: 'FCM');
     }
 
     _messaging.onTokenRefresh.listen((newToken) {
-      _pendingToken = newToken;
-      _tryRegisterToken();
+      _fcmToken = newToken;
+      _registerToken(newToken);
     });
 
     FirebaseMessaging.onMessage.listen((message) {
@@ -56,19 +66,13 @@ class FcmService {
     FirebaseMessaging.onBackgroundMessage(onBackgroundMessage);
   }
 
-  /// Call after login so we have an auth token to register the device.
-  void registerWithBackend(ApiService api) {
-    _api = api;
-    _tryRegisterToken();
-  }
-
-  Future<void> _tryRegisterToken() async {
-    if (_pendingToken == null || _api == null) return;
+  Future<void> _registerToken(String token) async {
+    if (_api == null) return;
     try {
       final platform = Platform.isAndroid ? 'android' : 'ios';
       await _api!.post(
         endPoint: Endpoints.deviceTokens,
-        body: {'token': _pendingToken, 'platform': platform},
+        body: {'token': token, 'platform': platform},
       );
       developer.log('FCM token registered with backend', name: 'FCM');
     } catch (e) {

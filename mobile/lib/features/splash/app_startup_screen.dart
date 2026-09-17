@@ -62,8 +62,8 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
   }
 
   void _goToProfileOrMain(ProfileModel profile, String token) {
-    // Register FCM token now that we have an auth token.
-    fcmService.registerWithBackend(getIt.get<ApiService>());
+    // Initialize FCM: request permission, get token, register with backend.
+    fcmService.initAfterLogin(getIt.get<ApiService>());
 
     final user = User(
       id: profile.id,
