@@ -29,6 +29,7 @@ from apps.ratings.models import Rating
 from apps.ratings.serializers import RatingSerializer
 from apps.notifications.services import notify
 from apps.notifications.models import Notification
+from apps.notifications.translations import t
 
 
 def admin_only(request):
@@ -292,17 +293,18 @@ class AdminOrderStatusView(APIView):
                 "status": new_status,
                 "changed_by": "admin",
             }
-            title = f"Order #{order.id} — {new_status.lower()}"
-            message = f"An administrator updated your order to {new_status}."
             if order.client_id:
+                title, message = t(order.client, "admin_status_update_client",
+                    order_id=order.id, status=new_status)
                 notify(
                     order.client, title, message,
                     notif_type=Notification.PUSH, data=payload,
                 )
             if order.worker_id and order.worker_id != order.client_id:
+                title, message = t(order.worker, "admin_status_update_worker",
+                    order_id=order.id, status=new_status)
                 notify(
-                    order.worker, title,
-                    f"An administrator updated this order to {new_status}.",
+                    order.worker, title, message,
                     notif_type=Notification.PUSH, data=payload,
                 )
 

@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 
 from apps.notifications.models import Notification
 from apps.notifications.services import notify
+from apps.notifications.translations import t
 from apps.payments.models import CommissionPayment
 from apps.payments import paymob
 from apps.users.models import User
@@ -214,14 +215,11 @@ class OrderListCreateView(APIView):
 
         for wp in available_workers:
             if order.worker and order.worker == wp.user:
-                title = "You Were Selected For an Order 🎯"
-                message = (
-                    f"A client chose you for a {order.service_category.name} "
-                    f"order #{order.id}. Please accept or reject."
-                )
+                title, message = t(wp.user, "selected_for_order",
+                    service=order.service_category.name, order_id=order.id)
             else:
-                title = "New Order Available"
-                message = f"New {order.service_category.name} order #{order.id} is available."
+                title, message = t(wp.user, "new_order_available",
+                    service=order.service_category.name, order_id=order.id)
 
             send_notification(wp.user, title=title, message=message, notif_type=Notification.PUSH)
 
@@ -353,11 +351,13 @@ class OrderAcceptView(APIView):
             logger.error(f"Paymob CAPTURE failed for Order #{order.id}: {e}")
 
         # Notify client
+        title, message = t(order.client, "order_accepted",
+            username=request.user.username, order_id=order.id)
         send_notification(
             order.client,
-            title = "Order Accepted ✅",
-            message  = f"{request.user.username} accepted your order #{order.id}.",
-            notif_type = Notification.PUSH,
+            title=title,
+            message=message,
+            notif_type=Notification.PUSH,
         )
         return Response(OrderSerializer(order, context={"request": request}).data)
 
@@ -406,10 +406,11 @@ class OrderRejectView(APIView):
             logger.error(f"Paymob VOID failed for Order #{order.id}: {e}")
 
         # Notify client
+        title, message = t(order.client, "order_rejected", order_id=order.id)
         send_notification(
             order.client,
-            title   = "Order Rejected ❌",
-            message = f"Your order #{order.id} was rejected. We will try to find another worker.",
+            title=title,
+            message=message,
         )
         return Response(OrderSerializer(order, context={"request": request}).data)
 
@@ -479,10 +480,11 @@ class OrderCancelView(APIView):
 
         # Notify worker if one was assigned
         if order.worker:
+            title, message = t(order.worker, "order_cancelled", order_id=order.id)
             send_notification(
                 order.worker,
-                title   = "Order Cancelled",
-                message = f"Order #{order.id} was cancelled by the client.",
+                title=title,
+                message=message,
             )
         return Response(OrderSerializer(order, context={"request": request}).data)
 
@@ -524,14 +526,12 @@ class OrderCompleteView(APIView):
         order.save(update_fields=["status", "marked_finished_at"])
 
         # Ping the client to confirm.
+        title, message = t(order.client, "order_finished_confirm",
+            order_id=order.id, service=order.service_category.name)
         send_notification(
             order.client,
-            title=f"Order #{order.id} — please confirm it's done",
-            message=(
-                f"Your worker says the {order.service_category.name} job "
-                "is finished. Open the order and tap Confirm to close it "
-                "and leave a rating."
-            ),
+            title=title,
+            message=message,
             notif_type=Notification.PUSH,
         )
         return Response(OrderSerializer(order, context={"request": request}).data)
@@ -584,16 +584,19 @@ class OrderConfirmCompletionView(APIView):
                 profile.save(update_fields=["completed_jobs"])
 
             # Ask the worker to celebrate, prompt the client to rate.
+            title, message = t(order.worker, "order_closed_worker",
+                order_id=order.id, service=order.service_category.name)
             send_notification(
                 order.worker,
-                title=f"Order #{order.id} closed ✅",
-                message=f"The client confirmed the {order.service_category.name} job is done.",
+                title=title,
+                message=message,
                 notif_type=Notification.PUSH,
             )
+        title, message = t(request.user, "rate_worker", order_id=order.id)
         send_notification(
             request.user,
-            title="Job confirmed — leave a rating?",
-            message=f"Order #{order.id} is closed. Tap to leave a star rating for the worker.",
+            title=title,
+            message=message,
             notif_type=Notification.PUSH,
         )
         return Response(OrderSerializer(order, context={"request": request}).data)

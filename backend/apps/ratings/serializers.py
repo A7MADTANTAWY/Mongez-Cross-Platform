@@ -61,13 +61,20 @@ class RatingSerializer(serializers.ModelSerializer):
         try:
             from apps.notifications.services import notify
             from apps.notifications.models import Notification
+            from apps.notifications.translations import t
 
             stars = rating.stars
             client_label = client.name_ar or client.username
+            if rating.review:
+                title, message = t(worker, "rating_received",
+                    stars=stars, client=client_label, review=rating.review)
+            else:
+                title, message = t(worker, "rating_received_default",
+                    stars=stars, client=client_label, order_id=order.id)
             notify(
                 worker,
-                f"{stars}-star rating from {client_label}",
-                rating.review or f"You got a {stars}-star rating on order #{order.id}.",
+                title,
+                message,
                 notif_type=Notification.PUSH,
                 data={
                     "kind": "rating",

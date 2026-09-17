@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             "profile_completed",
             "average_rating", "completed_jobs", "worker_id",
             "verification_status", "id_card_url",
-            "verified_at", "rejection_reason",
+            "verified_at", "rejection_reason", "language",
         ]
         read_only_fields = fields
 
@@ -93,10 +93,11 @@ class CompleteProfileSerializer(serializers.ModelSerializer):
         fields = [
             "name_ar", "email", "phone", "address",
             "governorate", "city", "role", "avatar",
-            "is_default",
+            "is_default", "language",
         ]
         extra_kwargs = {
             "avatar": {"required": False, "allow_null": True},
+            "language": {"required": False},
         }
 
     def validate_role(self, value):
@@ -144,7 +145,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             "name_ar", "email", "phone", "address",
-            "governorate", "city", "avatar",
+            "governorate", "city", "avatar", "language",
         ]
         extra_kwargs = {
             "name_ar": {"required": False, "allow_blank": True},
@@ -154,6 +155,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "governorate": {"required": False, "allow_blank": True},
             "city": {"required": False, "allow_blank": True},
             "avatar": {"required": False, "allow_null": True},
+            "language": {"required": False},
         }
 
 

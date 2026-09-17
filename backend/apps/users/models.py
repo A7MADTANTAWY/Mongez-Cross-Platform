@@ -122,6 +122,12 @@ class User(AbstractUser):
         blank=True, default="",
         help_text="Reason provided by admin when rejecting a worker.",
     )
+    language = models.CharField(
+        max_length=5,
+        choices=[("ar", "Arabic"), ("en", "English")],
+        default="en",
+        help_text="Preferred language for notifications.",
+    )
 
     REQUIRED_FIELDS = ["email"]
 

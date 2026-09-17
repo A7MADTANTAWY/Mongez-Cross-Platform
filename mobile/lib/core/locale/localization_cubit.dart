@@ -12,4 +12,6 @@ class LocalizationCubit extends Cubit<LocalizationState> {
     await AppPrefs.setLocale(langCode);
     emit(LocalizationState(locale: Locale(langCode)));
   }
+
+  String get currentLangCode => state.locale.languageCode;
 }
