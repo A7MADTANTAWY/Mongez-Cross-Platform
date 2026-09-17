@@ -1,4 +1,15 @@
 import 'package:equatable/equatable.dart';
+import 'package:mongez/core/constants/api_constants.dart';
+
+String? _absoluteMediaUrl(String? url) {
+  if (url == null || url.isEmpty) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  final base = ApiConstants.baseUrl;
+  final hostEnd = base.endsWith('/api/') ? base.length - 'api/'.length : base.length;
+  final host = base.substring(0, hostEnd).replaceAll(RegExp(r'/+$'), '');
+  final path = url.startsWith('/') ? url : '/$url';
+  return '$host$path';
+}
 
 class User extends Equatable {
   final int? id;
@@ -48,7 +59,7 @@ class User extends Equatable {
     governorate: json['governorate'] as String?,
     governorateLabel: json['governorate_label'] as String?,
     city: json['city'] as String?,
-    profileImage: (json['avatar_url'] ?? json['profile_image']) as String?,
+    profileImage: _absoluteMediaUrl((json['avatar_url'] ?? json['profile_image']) as String?),
     role: json['role'] as String?,
     dateJoined: json['date_joined'] == null
         ? null

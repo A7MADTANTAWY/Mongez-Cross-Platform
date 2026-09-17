@@ -201,6 +201,7 @@ class AdminUserDetailView(APIView):
 
 class AdminCategoryUpdateDeleteView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def patch(self, request, pk):
         if request.user.role != User.Role.ADMIN:

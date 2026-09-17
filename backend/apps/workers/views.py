@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 
 from apps.orders.models import Order
 from apps.ratings.models import Rating
@@ -48,6 +49,7 @@ class CategoryListView(APIView):
 class CategoryCreateView(APIView):
     """POST /api/categories/create/ — admin only"""
     permission_classes = [IsAuthenticated, IsAdmin]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def post(self, request):
         serializer = ServiceCategorySerializer(
