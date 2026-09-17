@@ -69,8 +69,8 @@ class FcmService {
     try {
       final platform = Platform.isAndroid ? 'android' : 'ios';
       await _api.post(
-        Endpoints.deviceTokens,
-        data: {'token': token, 'platform': platform},
+        endPoint: Endpoints.deviceTokens,
+        body: {'token': token, 'platform': platform},
       );
       developer.log('FCM token registered', name: 'FCM');
     } catch (e) {
