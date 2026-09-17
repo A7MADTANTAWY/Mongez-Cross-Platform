@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mongez/core/constants/endpoints.dart';
 import 'package:mongez/core/network/api_service.dart';
 
@@ -12,10 +13,41 @@ Future<void> onBackgroundMessage(RemoteMessage message) async {
 
 class FcmService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
   String? _fcmToken;
   ApiService? _api;
 
   FcmService();
+
+  Future<void> _initLocalNotifications() async {
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidSettings);
+    await _localNotifications.initialize(initSettings);
+  }
+
+  Future<void> _showLocalNotification(RemoteMessage message) async {
+    final notification = message.notification;
+    if (notification == null) return;
+
+    const androidDetails = AndroidNotificationDetails(
+      'mongez_channel',
+      'Mongez Notifications',
+      channelDescription: 'Order and service notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+    );
+    const details = NotificationDetails(android: androidDetails);
+
+    await _localNotifications.show(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      details,
+    );
+  }
 
   /// Call after login: request permission, get token, register with backend.
   Future<void> initAfterLogin(ApiService api) async {
@@ -34,6 +66,12 @@ class FcmService {
     }
 
     try {
+      await _initLocalNotifications();
+    } catch (e) {
+      developer.log('Local notifications init failed: $e', name: 'FCM');
+    }
+
+    try {
       final token = await _messaging.getToken();
       if (token != null) {
         _fcmToken = token;
@@ -49,9 +87,11 @@ class FcmService {
       _registerToken(newToken);
     });
 
+    // Foreground messages → show as heads-up notification
     FirebaseMessaging.onMessage.listen((message) {
       developer.log('FCM foreground: ${message.notification?.title}',
           name: 'FCM');
+      _showLocalNotification(message);
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
