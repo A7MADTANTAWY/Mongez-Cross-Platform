@@ -297,8 +297,8 @@ PAYMOB_INTEGRATION_ID = int(os.getenv("PAYMOB_INTEGRATION_ID", "0"))
 PAYMOB_HMAC_SECRET = os.getenv("PAYMOB_HMAC_SECRET", "")
 COMMISSION_AMOUNT = int(os.getenv("COMMISSION_AMOUNT", "20"))
 
-# Firebase Cloud Messaging — empty in dev, push delivery is then a no-op.
-FCM_SERVER_KEY = os.getenv("FCM_SERVER_KEY", "")
+# Firebase Cloud Messaging (HTTP v1 API)
+FCM_PROJECT_ID = os.getenv("FCM_PROJECT_ID", "mongez-86fdf")
 
 # Google OAuth — Web Client ID used to verify id_tokens from the mobile app.
 GOOGLE_WEB_CLIENT_ID = os.getenv("GOOGLE_WEB_CLIENT_ID", "")

@@ -29,13 +29,19 @@ mobile/.dart_tool/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/android/.gradle/
-mobile/android/app/build.gradle?*~
+mobile/android/app/build.gradle.kts?*~
 mobile/android/build/
 mobile/android/app/release-key.jks
 mobile/android/key.properties
 mobile/hs_err_pid*.log
 mobile/flutter_log.txt
 mobile/*.jks
+mobile/.env
+
+# ── Local environment files (templates *.env.example stay tracked) ───────────
+.env
+.env.*
+!.env.example
 
 # ── Deployment (generated output — rebuilt by deployment/scripts/build.*) ──
 deployment/out/

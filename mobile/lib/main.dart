@@ -5,9 +5,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mongez/app.dart';
 import 'package:mongez/core/di/services_locator.dart';
+import 'package:mongez/core/network/api_service.dart';
+import 'package:mongez/core/services/fcm_service.dart';
 import 'package:mongez/core/utils/app_prefs.dart';
 import 'package:mongez/firebase_options.dart';
 
@@ -49,6 +52,10 @@ Future<void> _initFirebase() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+    // Initialize FCM after Firebase is ready.
+    final apiService = GetIt.instance<ApiService>();
+    await FcmService(apiService).init();
   } catch (e) {
     developer.log('Firebase init failed: $e', name: 'Mongez');
   }

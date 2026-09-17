@@ -285,7 +285,7 @@ class AdminOrderStatusView(APIView):
         # Fan out to the affected client (and worker, if assigned) so the
         # mobile sees the dashboard action immediately via the notification
         # poll + the order-list poll, instead of only via the order poll.
-        # We mark it PUSH so FCM fires too when FCM_SERVER_KEY is set.
+        # We mark it PUSH so FCM fires too when service account is configured.
         if previous_status != new_status:
             payload = {
                 "order_id": order.id,

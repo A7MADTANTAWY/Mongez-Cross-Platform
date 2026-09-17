@@ -50,4 +50,5 @@ class Endpoints {
   static const String notificationsUnreadCount = 'notifications/unread-count/';
   static String notificationRead(int id) => 'notifications/$id/read/';
   static const String notificationsReadAll = 'notifications/read-all/';
+  static const String deviceTokens = 'notifications/devices/';
 }

@@ -251,6 +251,83 @@ cd frontend && npm run lint && npm run build
 
 ---
 
+## 🚀 Railway Deployment
+
+This section describes how to deploy the **Django backend** on [Railway](https://railway.app) with a **PostgreSQL** database. The React dashboard is deployed separately (Vercel), and the Flutter app only needs one URL changed after the API goes live.
+
+> The Railway deployment config already lives in `backend/nixpacks.toml` (Nixpacks provider). The start command runs migrations → `collectstatic` → Gunicorn automatically.
+
+### Step 1 — Create a Railway project
+1. Sign in at [railway.app](https://railway.app).
+2. Click **New Project** → **Deploy from GitHub repo**.
+3. Select the `A7MADTANTAWY/Mongez-Cross-Platform` repository.
+
+### Step 2 — Connect the GitHub repository
+Let Railway import the repo. Then create a **backend service** from the repo and set its **Root Directory** to `backend` (Settings → Root Directory). Nixpacks auto-detects the Python project and `requirements.txt`.
+
+### Step 3 — Add PostgreSQL
+1. In the project, click **New** → **Database** → **PostgreSQL**.
+2. Railway provisions a database and exposes `DATABASE_URL`.
+3. On the backend service, under **Variables**, add a reference:
+   ```
+   DATABASE_URL = ${{ Postgres.DATABASE_URL }}
+   ```
+
+### Step 4 — Configure environment variables
+Set these on the backend service (Settings → Variables):
+
+| Variable | Value |
+|---|---|
+| `DJANGO_SECRET_KEY` | a long random string (`openssl rand -hex 40`) — required, the app fails to start without it |
+| `FRONTEND_URL` | `https://<vercel-app>.vercel.app` (the React dashboard URL) once it exists |
+| `CLOUDINARY_CLOUD_NAME` | your Cloudinary account name (for media uploads) |
+| `CLOUDINARY_API_KEY` | your Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | your Cloudinary API secret |
+| `DJANGO_DEBUG` | `false` (already the default on Railway) |
+
+`DATABASE_URL`, `PORT`, `RAILWAY_PROJECT_ID` and later `RAILWAY_PUBLIC_DOMAIN` are injected by Railway automatically. When `RAILWAY_*` variables are detected the backend switches to production mode: `DEBUG=False`, secure cookies on, and its own public domain is added to `ALLOWED_HOSTS`, CORS and CSRF.
+
+### Step 5 — Deploy Django
+Railway builds with Nixpacks from `backend/`. The start command (from `backend/nixpacks.toml`):
+```bash
+python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+```
+
+### Step 6 — Run migrations
+Migrations run automatically on every start (the command above). To run them manually:
+```bash
+python manage.py migrate --noinput
+```
+(From within `backend/` in a Railway shell.)
+
+### Step 7 — Run collectstatic
+Also included in the start command. To run it manually:
+```bash
+python manage.py collectstatic --noinput
+```
+
+### Step 8 — Get the Railway public domain
+On the backend service, click **Settings** → **Networking** → **Generate Domain** (e.g. `mongez-api.up.railway.app`). Railway then sets `RAILWAY_PUBLIC_DOMAIN`, which the backend allows automatically.
+
+### Step 9 — Update the Flutter API base URL
+In `mobile/lib/core/constants/api_constants.dart`, change `ApiConstants.baseUrl` to:
+```dart
+static const String baseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'https://<railway-domain>/api/',
+);
+```
+Or pass it at build time without editing code:
+```bash
+flutter build apk --dart-define=API_BASE_URL=https://<railway-domain>/api/
+```
+
+### Step 10 — Test the application
+- Health: `https://<railway-domain>/api/health/` → `{"status": "ok"}`
+- Login / register, workers, orders, addresses, favorites, ratings, notifications from the Flutter app.
+
+---
+
 ## 📦 تفاصيل الـ Deploy
 
 - **Backend**: Docker (`deployment/docker/docker-compose.yml`) لسه، أو Hostinger shared hosting عبر `backend/passenger_wsgi.py` + باكدج يتولّد بـ `deployment/scripts/build.*` (الدومين: `mongez.digital`، دليل `deployment/hostinger/HOSTINGER_DEPLOY.md`).
@@ -261,7 +338,7 @@ cd frontend && npm run lint && npm run build
 
 ## ⚠️ نقاط مهمة تعرفها (ملاحظات الفحص الحالي)
 
-1. **`waitress` مش موجود في `requirements.txt`** لكن `run_server.py` بيستخدمه — ثبّته يدويًا أو أضفه.
+1. **`waitress` أصبح موجود في `requirements.txt`** — `run_server.py` بيستخدمه والآن مثبت.
 2. **`rest_framework_simplejwt.token_blacklist` مش متسجل في INSTALLED_APPS** — فالـ logout blacklist عمليًا no-op (الـ exception متبتلع). يعني الـ logout بيحذف الـ tokens من العميل بس.
 3. **Paymob و FCM keys فارغة في `.env` الحالي** — العمولة والـ push مشتغلين بنجاح "صامت" (order بيتبدع + Payment بيبقى AUTHORIZED حتى لو paymob مش متصل، والإشعار بيتحفظ في الـ DB).
 4. **صفحة Payments في لوحة التحكم مبنية بس مش متربطة** (`frontend/src/pages/admin/Payments.jsx` + endpoints موجودة، لكن من غير route ولا sidebar entry).

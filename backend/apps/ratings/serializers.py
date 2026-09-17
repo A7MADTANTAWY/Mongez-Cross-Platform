@@ -56,7 +56,7 @@ class RatingSerializer(serializers.ModelSerializer):
         profile.save()
 
         # Tell the worker — same fan-out the admin status-change uses.
-        # In-app row + FCM push (best-effort if FCM_SERVER_KEY is set).
+        # In-app row + FCM push (best-effort if service account is configured).
         # Wrapped so a notify() exception never blocks the 201 reply.
         try:
             from apps.notifications.services import notify
