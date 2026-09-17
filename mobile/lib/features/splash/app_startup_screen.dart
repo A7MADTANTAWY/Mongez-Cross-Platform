@@ -1,6 +1,8 @@
+import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mongez/core/di/services_locator.dart';
+import 'package:mongez/core/error/failure.dart';
 import 'package:mongez/core/network/api_service.dart';
 import 'package:mongez/core/routing/navigation_service.dart';
 import 'package:mongez/core/services/fcm_service.dart';
@@ -38,28 +40,23 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     }
     try {
       final profileRepo = getIt.get<ProfileRepository>();
-      final result = await profileRepo.getProfile();
+      // Add a 5s timeout so the splash never hangs on a slow/bad token.
+      final result = await profileRepo.getProfile().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              PrefHelper.clearAll();
+              return dartz.Left(ServerFailure(errorMessage: 'timeout'));
+            },
+          );
       result.fold(
         (_) async {
-          final refreshed = await _tryRefreshToken();
-          if (!refreshed) {
-            _goToAuthFlow();
-            return;
-          }
-          final newToken = await PrefHelper.getToken();
-          if (newToken == null) {
-            _goToAuthFlow();
-            return;
-          }
-          final retry = await profileRepo.getProfile();
-          retry.fold(
-            (_) => _goToAuthFlow(),
-            (profile) => _goToProfileOrMain(profile, newToken),
-          );
+          await PrefHelper.clearAll();
+          _goToAuthFlow();
         },
         (profile) => _goToProfileOrMain(profile, token),
       );
     } catch (_) {
+      await PrefHelper.clearAll();
       _goToAuthFlow();
     }
   }

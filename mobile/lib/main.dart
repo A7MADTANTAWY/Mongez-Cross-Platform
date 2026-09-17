@@ -18,11 +18,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = false;
 
-  // Initialize Firebase in the background (not awaited) so the first frame
-  // renders immediately. Firebase's init performs a network handshake that
-  // can stall for several seconds on slow or unreachable links; awaiting it
-  // here used to delay the whole app before the splash even appeared.
-  // Crash reporting attaches as soon as init completes.
   if (!kIsWeb) {
     _initFirebase();
   }
@@ -36,25 +31,19 @@ void main() async {
       developer.log('Uncaught error: $error', name: 'Mongez');
       if (!kIsWeb) {
         try {
-          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
         } catch (_) {}
       }
     },
   );
 }
 
-/// Kicks off Firebase without blocking the UI thread. Safe to call as an
-/// unawaited background task; failures are logged and ignored so a broken
-/// Firebase config never prevents the app from running.
 Future<void> _initFirebase() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-
-    // Request FCM permission + get token (no backend call yet).
-    await fcmService.requestPermissionAndGetToken();
   } catch (e) {
     developer.log('Firebase init failed: $e', name: 'Mongez');
   }
