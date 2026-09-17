@@ -43,23 +43,28 @@ def notify(user, title, message, notif_type=Notification.IN_APP, data=None):
 
 
 def _get_fcm_access_token():
-    """Get a short-lived OAuth2 access token from the Firebase service account."""
+    """Get a short-lived OAuth2 access token from the Firebase service account.
+
+    Reads the service account JSON from FCM_SERVICE_ACCOUNT_JSON env var
+    (paste the full JSON content as a Railway variable).
+    """
     global _fcm_access_token, _fcm_token_expiry
 
     import time
     if _fcm_access_token and time.time() < _fcm_token_expiry:
         return _fcm_access_token
 
-    service_account_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
-    if not service_account_file:
+    service_account_json = os.getenv("FCM_SERVICE_ACCOUNT_JSON", "")
+    if not service_account_json:
         return None
 
     try:
         from google.oauth2 import service_account
         import google.auth.transport.requests
 
-        credentials = service_account.Credentials.from_service_account_file(
-            service_account_file,
+        info = json.loads(service_account_json)
+        credentials = service_account.Credentials.from_service_account_info(
+            info,
             scopes=["https://www.googleapis.com/auth/firebase.messaging"],
         )
         credentials.refresh(google.auth.transport.requests.Request())
