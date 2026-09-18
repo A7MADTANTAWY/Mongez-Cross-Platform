@@ -69,7 +69,7 @@ def _get_fcm_access_token():
         )
         credentials.refresh(google.auth.transport.requests.Request())
         _fcm_access_token = credentials.token
-        _fcm_token_expiry = time.time() + credentials.expiry.timestamp() - 60
+        _fcm_token_expiry = credentials.expiry.timestamp() - 60
         return _fcm_access_token
     except Exception as exc:
         logger.warning("Failed to get FCM access token: %s", exc)

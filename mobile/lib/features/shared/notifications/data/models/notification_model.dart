@@ -27,7 +27,7 @@ class NotificationModel extends Equatable {
       type: json['type'] as String? ?? 'in_app',
       isRead: json['is_read'] as bool? ?? false,
       createdAt: json['created_at'] as String?,
-      orderId: json['order'] as int?,
+      orderId: (json['data'] as Map<String, dynamic>?)?['order_id'] as int?,
     );
   }
 
