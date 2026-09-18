@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { adminAPI, referenceAPI } from '../../services/api';
 import { usePolling, useTimeAgo } from '../../hooks/usePolling';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -18,6 +19,7 @@ const emptyForm = {
 };
 
 const Users = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [governorateFilter, setGovernorateFilter] = useState('');
@@ -276,7 +278,7 @@ const Users = () => {
                 {!loading && users.map((user) => {
                   const rc = roleColors[user.role] || roleColors.client;
                   return (
-                    <tr key={user.id}>
+                    <tr key={user.id} onClick={() => navigate(`/admin/users/${user.id}`)} style={{ cursor: 'pointer' }}>
                       <td style={{ fontWeight: '500' }}>#{user.id}</td>
                       <td>
                         <div className="d-flex align-items-center gap-2">
@@ -309,13 +311,13 @@ const Users = () => {
                       <td style={{ color: '#64748b', fontSize: '14px' }}>{new Date(user.date_joined).toLocaleDateString()}</td>
                       <td>
                         <div className="d-flex gap-1">
-                          <button className="btn btn-sm" style={{ color: '#6366f1', background: '#6366f110', borderRadius: '8px' }} onClick={() => openEdit(user)} title="Edit">
+                          <button className="btn btn-sm" style={{ color: '#6366f1', background: '#6366f110', borderRadius: '8px' }} onClick={(e) => { e.stopPropagation(); openEdit(user); }} title="Edit">
                             <i className="bi bi-pencil"></i>
                           </button>
-                          <button className="btn btn-sm" style={{ color: user.is_active ? '#f59e0b' : '#10b981', background: user.is_active ? '#f59e0b10' : '#10b98110', borderRadius: '8px' }} onClick={() => toggleActive(user)} title={user.is_active ? 'Deactivate' : 'Activate'}>
+                          <button className="btn btn-sm" style={{ color: user.is_active ? '#f59e0b' : '#10b981', background: user.is_active ? '#f59e0b10' : '#10b98110', borderRadius: '8px' }} onClick={(e) => { e.stopPropagation(); toggleActive(user); }} title={user.is_active ? 'Deactivate' : 'Activate'}>
                             <i className={`bi ${user.is_active ? 'bi-pause-circle' : 'bi-play-circle'}`}></i>
                           </button>
-                          <button className="btn btn-sm" style={{ color: '#ef4444', background: '#ef444410', borderRadius: '8px' }} onClick={() => setDeleteTarget(user)} title="Delete">
+                          <button className="btn btn-sm" style={{ color: '#ef4444', background: '#ef444410', borderRadius: '8px' }} onClick={(e) => { e.stopPropagation(); setDeleteTarget(user); }} title="Delete">
                             <i className="bi bi-trash"></i>
                           </button>
                         </div>

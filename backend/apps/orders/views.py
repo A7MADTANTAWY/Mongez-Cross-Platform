@@ -428,6 +428,12 @@ class OrderCancelView(APIView):
       - PENDING    → always allowed (no worker started yet)
       - ACCEPTED   → allowed only AFTER 1 hour of worker acceptance
       - otherwise  → blocked
+
+    Optional `reason` body field records *why* the order was cancelled
+    (e.g. WORKER_DELAY). We never assume a reason the client didn't
+    state. When the client explicitly cancels an accepted order because
+    of a worker delay, every admin gets an in-app notification naming
+    the order and the worker so they can follow up.
     """
 
     permission_classes = [IsAuthenticated, IsProfileCompleted]
@@ -459,9 +465,18 @@ class OrderCancelView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        reason = request.data.get("reason") or None
+        if reason is not None and reason not in dict(Order.CANCELLATION_REASON_CHOICES):
+            return Response(
+                {"error": f"Invalid reason. Must be one of: {', '.join(dict(Order.CANCELLATION_REASON_CHOICES))}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        previous_status = order.status
         # Update order
         order.status = Order.CANCELLED
         order.cancelled_at = now()
+        order.cancellation_reason = reason
         order.save()
 
         # Void commission via Paymob — only if it was AUTHORIZED
@@ -489,6 +504,42 @@ class OrderCancelView(APIView):
                 message=message,
                 notif_type=Notification.PUSH,
             )
+
+        # A client explicitly cancelled an accepted job because the worker
+        # was delayed → surface it to every admin so they can follow up.
+        # We only fire this on the stated reason; an unspecified or
+        # client-caused cancellation never triggers it.
+        if (
+            previous_status == Order.ACCEPTED
+            and reason == Order.WORKER_DELAY
+        ):
+            worker_label = (
+                order.worker.name_ar
+                or order.worker.username
+                if order.worker
+                else "N/A"
+            )
+            admins = User.objects.filter(
+                role=User.Role.ADMIN, is_active=True,
+            )
+            for admin in admins:
+                title, message = t(
+                    admin, "worker_delay_cancellation_admin",
+                    order_id=order.id, worker=worker_label,
+                )
+                notify(
+                    admin,
+                    title,
+                    message,
+                    notif_type=Notification.IN_APP,
+                    data={
+                        "kind": "worker_delay_cancellation",
+                        "order_id": order.id,
+                        "worker_id": order.worker_id,
+                        "reason": Order.WORKER_DELAY,
+                    },
+                )
+
         return Response(OrderSerializer(order, context={"request": request}).data)
 
 

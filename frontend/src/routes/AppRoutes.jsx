@@ -11,7 +11,9 @@ const LoginPage = lazy(() => import('../pages/Login'));
 const NotFound = lazy(() => import('../pages/NotFound'));
 const Dashboard = lazy(() => import('../pages/admin/Dashboard'));
 const Users = lazy(() => import('../pages/admin/Users'));
+const UserProfile = lazy(() => import('../pages/admin/UserProfile'));
 const Workers = lazy(() => import('../pages/admin/Workers'));
+const WorkerProfile = lazy(() => import('../pages/admin/WorkerProfile'));
 const Categories = lazy(() => import('../pages/admin/Categories'));
 const Orders = lazy(() => import('../pages/admin/Orders'));
 const Ratings = lazy(() => import('../pages/admin/Ratings'));
@@ -79,7 +81,9 @@ function AppRoutes() {
             >
               <Route index element={<Dashboard />} />
               <Route path="users" element={<Users />} />
+              <Route path="users/:id" element={<UserProfile />} />
               <Route path="workers" element={<Workers />} />
+              <Route path="workers/:id" element={<WorkerProfile />} />
               <Route path="categories" element={<Categories />} />
               <Route path="orders" element={<Orders />} />
               <Route path="ratings" element={<Ratings />} />

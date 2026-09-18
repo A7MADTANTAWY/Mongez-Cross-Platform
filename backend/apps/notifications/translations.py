@@ -127,6 +127,16 @@ MESSAGES = {
             "message": "حصلت على تقييم {stars} نجوم في الطلب #{order_id}.",
         },
     },
+    "worker_delay_cancellation_admin": {
+        "en": {
+            "title": "Order #{order_id} cancelled — worker delay",
+            "message": "The client cancelled order #{order_id} due to worker delay. Worker: {worker}.",
+        },
+        "ar": {
+            "title": "طلب #{order_id} مُلغى — تأخير الفني",
+            "message": "ألغى العميل الطلب رقم #{order_id} بسبب تأخير الفني. الفني: {worker}.",
+        },
+    },
 }
 
 

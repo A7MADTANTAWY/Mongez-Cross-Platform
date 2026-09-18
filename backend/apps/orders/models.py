@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 from apps.users.models import User, Address
 from apps.workers.models import ServiceCategory
 
@@ -22,6 +24,16 @@ class Order(models.Model):
         (REJECTED, "Rejected"),
         (CANCELLED, "Cancelled"),
         (COMPLETED, "Completed"),
+    ]
+
+    # Why a cancellation happened — set by the cancelling party (client or
+    # admin). Nullable so older orders and non-stated reasons stay honest:
+    # we never assume a reason nobody recorded.
+    WORKER_DELAY = "WORKER_DELAY"
+    CANCELLATION_OTHER = "OTHER"
+    CANCELLATION_REASON_CHOICES = [
+        (WORKER_DELAY, "Worker delay"),
+        (CANCELLATION_OTHER, "Other"),
     ]
 
     URGENCY_LOW = "LOW"
@@ -81,6 +93,10 @@ class Order(models.Model):
         choices = STATUS_CHOICES,
         default = PENDING,
     )
+    cancellation_reason = models.CharField(
+        max_length=20, choices=CANCELLATION_REASON_CHOICES,
+        null=True, blank=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     accepted_at  = models.DateTimeField(null=True, blank=True)
@@ -100,6 +116,38 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} [{self.status}] — {self.client.username}"
+
+    @classmethod
+    def behavior_summary(cls, user, recent_days=30, lookup="client"):
+        """Order behavior summary, computed server-side so any
+        consumer (admin profile page, future dashboard cards, CSVs) sees
+        the same numbers.
+
+        `lookup` selects which side of the order the summary describes:
+        "client" (orders a client placed) or "worker" (orders assigned to
+        a worker). Defaults to "client", matching the UserProfile page.
+
+        Uses real data only. Counts that are *not* the client's fault —
+        a cancellation due to a worker delay — are reported separately so
+        they can be excluded from client-behavior signals downstream.
+        """
+        qs = cls.objects.filter(**{f"{lookup}": user})
+        cancelled = qs.filter(status=cls.CANCELLED)
+        total = qs.count()
+
+        since = timezone.now() - timedelta(days=recent_days)
+        return {
+            "total_orders": total,
+            "completed_orders": qs.filter(status=cls.COMPLETED).count(),
+            "cancelled_orders": cancelled.count(),
+            "cancellation_rate": round(cancelled.count() / total * 100, 1) if total else 0.0,
+            "recent_cancellations_30d": cancelled.filter(
+                cancelled_at__gte=since,
+            ).count(),
+            "cancelled_due_to_worker_delay": cancelled.filter(
+                cancellation_reason=cls.WORKER_DELAY,
+            ).count(),
+        }
 
 
 class OrderAttachment(models.Model):

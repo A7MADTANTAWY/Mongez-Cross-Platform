@@ -1,6 +1,6 @@
 import csv
 from django.core.cache import cache
-from django.db.models import Count, Sum, Q
+from django.db.models import Avg, Count, Sum, Q
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -365,6 +365,16 @@ class AdminWorkerListView(APIView):
         total = queryset.count()
         users = queryset.order_by("-date_joined")[start:end]
 
+        # How many cancellations on each worker's orders were caused by a
+        # worker delay — the Workers table flags repeated incidents.
+        delay_counts = dict(
+            Order.objects.filter(
+                worker__in=users,
+                status=Order.CANCELLED,
+                cancellation_reason=Order.WORKER_DELAY,
+            ).values_list("worker_id").annotate(total=Count("id"))
+        )
+
         # Use the same serializer as the mobile app for consistent data.
         profiles = []
         profile_user_ids = set()
@@ -396,6 +406,7 @@ class AdminWorkerListView(APIView):
                     "user": UserSerializer(u, context={"request": request}).data,
                     "has_profile": False,
                 }
+            entry["delay_cancellations"] = delay_counts.get(u.id, 0)
             results.append(entry)
 
         return Response({
@@ -546,6 +557,121 @@ class AdminWorkerRejectView(APIView):
         return Response({
             "message": "Worker rejected.",
             "user": UserSerializer(user, context={"request": request}).data,
+        })
+
+
+def _paged_orders(request, queryset):
+    """Slice an orders queryset by ?page & ?page_size (admin-profile shape)."""
+    page = int(request.query_params.get("page", 1))
+    page_size = min(int(request.query_params.get("page_size", 50)), 100)
+    start = (page - 1) * page_size
+    end = start + page_size
+    total = queryset.count()
+    queryset = queryset.order_by("-created_at")[start:end]
+    from apps.orders.serializers import OrderSerializer
+    return {
+        "count": total,
+        "page": page,
+        "page_size": page_size,
+        "results": OrderSerializer(
+            queryset, many=True, context={"request": request},
+        ).data,
+    }
+
+
+class AdminWorkerProfileView(APIView):
+    """GET /api/admin/workers/<pk>/profile/ — the full worker picture in
+    one call: profile data, order history with cancellation reasons, and
+    ratings. Powers the /admin/workers/<id> profile page. Admin only."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        if request.user.role != User.Role.ADMIN:
+            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            user = User.objects.get(pk=pk, role=User.Role.WORKER)
+        except User.DoesNotExist:
+            return Response({"error": "Worker not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        profile = getattr(user, "worker_profile", None)
+        if profile is None:
+            return Response(
+                {"error": "This worker has no profile yet."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        orders = _paged_orders(
+            request,
+            Order.objects.filter(worker=user).select_related(
+                "client", "worker", "service_category", "address",
+            ),
+        )
+
+        ratings_qs = (
+            Rating.objects.filter(worker=user)
+            .select_related("client", "order", "order__service_category")
+            .order_by("-created_at")
+        )
+        rating_count = ratings_qs.count()
+        rating_avg = (
+            ratings_qs.aggregate(avg=Avg("stars"))["avg"] or 0.0
+        )
+
+        from apps.ratings.serializers import AdminRatingSerializer
+        page = int(request.query_params.get("page", 1))
+        page_size = min(int(request.query_params.get("page_size", 50)), 100)
+        start = (page - 1) * page_size
+
+        return Response({
+            "profile": WorkerProfileSerializer(
+                profile, context={"request": request},
+            ).data,
+            "orders": orders,
+            "summary": Order.behavior_summary(user, lookup="worker"),
+            "ratings": {
+                "count": rating_count,
+                "average": round(rating_avg, 2),
+                "page": page,
+                "page_size": page_size,
+                "results": AdminRatingSerializer(
+                    ratings_qs[start : start + page_size],
+                    many=True,
+                ).data,
+            },
+        })
+
+
+class AdminUserProfileView(APIView):
+    """GET /api/admin/users/<pk>/profile/ — a client's profile with their
+    orders and a server-computed behavior summary. The summary is one
+    query shape shared with any future dashboard cards.
+
+    Cancellations caused by the worker (WORKER_DELAY) are counted
+    separately so they're never mistaken for client misbehavior. Admin
+    only."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        if request.user.role != User.Role.ADMIN:
+            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        orders = _paged_orders(
+            request,
+            Order.objects.filter(client=user).select_related(
+                "client", "worker", "service_category", "address",
+            ),
+        )
+
+        return Response({
+            "user": UserSerializer(user, context={"request": request}).data,
+            "behavior": Order.behavior_summary(user),
+            "orders": orders,
         })
 
 

@@ -10,6 +10,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from apps.users.models import User
+from apps.orders.models import Order
 
 
 class AdminApiAccessControlTests(TestCase):
@@ -89,7 +90,6 @@ class AdminApiAccessControlTests(TestCase):
         current model, 500ing on the first worker without a profile."""
         # Add one worker without a WorkerProfile — this is the case that
         # used to trigger the 500.
-        from apps.users.models import User
         User.objects.create_user(
             username="bare_worker",
             phone="01000000077",
@@ -108,6 +108,52 @@ class AdminApiAccessControlTests(TestCase):
         self.assertIsNone(row["id"])
         self.assertIn("user", row)
         self.assertIn("has_profile", row)
+
+    def test_worker_list_reports_worker_delay_cancellations(self):
+        """Every worker list row must carry delay_cancellations so the
+        admin Workers table can flag repeated no-show/delay incidents."""
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.workers.models import ServiceCategory
+
+        now = timezone.now()
+        # Worker A: two cancellations caused by worker delay.
+        worker_a = User.objects.create_user(
+            username="delay_a", phone="01000000061",
+            password="WorkerPass123", role=User.Role.WORKER,
+        )
+        # Worker B: no delay cancellations.
+        worker_b = User.objects.create_user(
+            username="delay_b", phone="01000000062",
+            password="WorkerPass123", role=User.Role.WORKER,
+        )
+        cat = ServiceCategory.objects.create(name="Delay test")
+        for i in range(2):
+            Order.objects.create(
+                client=self.client_user,
+                worker=worker_a,
+                service_category=cat,
+                status=Order.CANCELLED,
+                cancellation_reason=Order.WORKER_DELAY,
+                created_at=now - timedelta(days=3 + i),
+            )
+        Order.objects.create(
+            client=self.client_user,
+            worker=worker_b,
+            service_category=cat,
+            status=Order.CANCELLED,
+            cancellation_reason=Order.CANCELLATION_OTHER,
+            created_at=now - timedelta(days=1),
+        )
+
+        self._auth_as(self.admin)
+        r = self.api.get(reverse("admin-worker-list"))
+        self.assertEqual(r.status_code, 200, r.content)
+        by_username = {row["user"]["username"]: row for row in r.json()["results"]}
+        self.assertIn(worker_a.username, by_username)
+        self.assertIn(worker_b.username, by_username)
+        self.assertEqual(by_username[worker_a.username]["delay_cancellations"], 2)
+        self.assertEqual(by_username[worker_b.username]["delay_cancellations"], 0)
 
 
 class AdminOrderStatusFanoutTests(TestCase):
@@ -187,3 +233,146 @@ class AdminOrderStatusFanoutTests(TestCase):
         r = self.api.patch(url, {"status": "PENDING"}, format="json")
         self.assertEqual(r.status_code, 200, r.content)
         self.assertEqual(self.Notification.objects.count(), 0)
+
+
+class AdminProfileEndpointTests(TestCase):
+    """The /admin/workers/<pk>/profile/ and /admin/users/<pk>/profile/
+    endpoints feed the new WorkerProfile / UserProfile admin pages.
+    They must return real data only (profile + orders + ratings), gate
+    non-admins, and compute the user behavior summary server-side."""
+
+    def setUp(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.workers.models import ServiceCategory, WorkerProfile
+        from apps.ratings.models import Rating
+
+        cache.clear()
+        now = timezone.now()
+        self.admin = User.objects.create_user(
+            username="admin_prof",
+            phone="01000000399",
+            password="AdminPass123",
+            role=User.Role.ADMIN,
+        )
+        self.client_user = User.objects.create_user(
+            username="client_prof",
+            phone="01000000388",
+            password="ClientPass123",
+            role=User.Role.CLIENT,
+            name_ar="Test Client",
+        )
+        self.worker = User.objects.create_user(
+            username="worker_prof",
+            phone="01000000377",
+            password="WorkerPass123",
+            role=User.Role.WORKER,
+            name_ar="Test Worker",
+        )
+        self.category = ServiceCategory.objects.create(name="Plumbing")
+        self.profile = WorkerProfile.objects.create(
+            user=self.worker,
+            profession="Plumbing",
+            experience_years=5,
+            hourly_rate="150.00",
+            specialties="plumbing,leaks",
+            is_verified=True,
+        )
+        # Worker orders: one completed, one cancelled (client, other reason),
+        # one cancelled due to worker delay.
+        self.completed = Order.objects.create(
+            client=self.client_user, worker=self.worker,
+            service_category=self.category, status=Order.COMPLETED,
+            completed_at=now - timedelta(days=10),
+            created_at=now - timedelta(days=12),
+        )
+        self.cancelled_other = Order.objects.create(
+            client=self.client_user, worker=self.worker,
+            service_category=self.category, status=Order.CANCELLED,
+            cancellation_reason=Order.CANCELLATION_OTHER,
+            cancelled_at=now - timedelta(days=3),
+            created_at=now - timedelta(days=5),
+        )
+        self.delayed = Order.objects.create(
+            client=self.client_user, worker=self.worker,
+            service_category=self.category, status=Order.CANCELLED,
+            cancellation_reason=Order.WORKER_DELAY,
+            cancelled_at=now - timedelta(days=1),
+            created_at=now - timedelta(days=2),
+        )
+        # One rating on the completed order.
+        Rating.objects.create(
+            order=self.completed, client=self.client_user,
+            worker=self.worker, stars=5, review="Great job",
+            created_at=now - timedelta(days=9),
+        )
+        self.api = APIClient()
+
+    def _login_admin(self):
+        r = self.api.post(
+            "/api/auth/login/",
+            {"username": self.admin.username, "password": "AdminPass123"},
+            format="json",
+        )
+        self.api.credentials(HTTP_AUTHORIZATION=f"Bearer {r.data['tokens']['access']}")
+
+    def test_worker_profile_requires_admin(self):
+        r = self.api.get(reverse("admin-worker-profile", kwargs={"pk": self.worker.id}))
+        self.assertEqual(r.status_code, 401)
+
+        r = self.api.post(
+            "/api/auth/login/",
+            {"username": self.client_user.username, "password": "ClientPass123"},
+            format="json",
+        )
+        self.api.credentials(HTTP_AUTHORIZATION=f"Bearer {r.data['tokens']['access']}")
+        r = self.api.get(reverse("admin-worker-profile", kwargs={"pk": self.worker.id}))
+        self.assertEqual(r.status_code, 403)
+
+    def test_worker_profile_returns_profile_orders_and_ratings(self):
+        self._login_admin()
+        r = self.api.get(reverse("admin-worker-profile", kwargs={"pk": self.worker.id}))
+        self.assertEqual(r.status_code, 200, r.content)
+        body = r.json()
+
+        self.assertEqual(body["profile"]["id"], self.profile.id)
+        self.assertEqual(body["profile"]["profession"], "Plumbing")
+        self.assertTrue(body["profile"]["is_verified"])
+        # Real user data from the database.
+        self.assertEqual(body["profile"]["user"]["username"], "worker_prof")
+
+        self.assertEqual(body["orders"]["count"], 3)
+        statuses = {o["status"] for o in body["orders"]["results"]}
+        self.assertEqual(statuses, {Order.COMPLETED, Order.CANCELLED})
+        # The delay cancellation carries its reason.
+        delayed = next(o for o in body["orders"]["results"] if o["id"] == self.delayed.id)
+        self.assertEqual(delayed["cancellation_reason"], Order.WORKER_DELAY)
+
+        self.assertEqual(body["ratings"]["count"], 1)
+        self.assertEqual(body["ratings"]["average"], 5.0)
+        self.assertEqual(body["ratings"]["results"][0]["review"], "Great job")
+
+        # Performance summary for the worker page (cancelled / delay counts).
+        self.assertEqual(body["summary"]["total_orders"], 3)
+        self.assertEqual(body["summary"]["cancelled_orders"], 2)
+        self.assertEqual(body["summary"]["cancelled_due_to_worker_delay"], 1)
+
+    def test_user_profile_returns_behavior_and_orders(self):
+        self._login_admin()
+        r = self.api.get(reverse("admin-user-profile", kwargs={"pk": self.client_user.id}))
+        self.assertEqual(r.status_code, 200, r.content)
+        body = r.json()
+
+        self.assertEqual(body["user"]["username"], "client_prof")
+        self.assertEqual(body["user"]["is_active"], True)
+        self.assertEqual(body["orders"]["count"], 3)
+
+        behavior = body["behavior"]
+        self.assertEqual(behavior["total_orders"], 3)
+        self.assertEqual(behavior["completed_orders"], 1)
+        self.assertEqual(behavior["cancelled_orders"], 2)
+        # One of those two cancellations was the worker's delay — not a
+        # client behavior signal.
+        self.assertEqual(behavior["cancelled_due_to_worker_delay"], 1)
+        self.assertEqual(behavior["recent_cancellations_30d"], 2)
+        self.assertIsInstance(behavior["cancellation_rate"], float)

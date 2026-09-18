@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Table = ({ columns, data, loading, emptyMessage = 'No data found' }) => {
+const Table = ({ columns, data, loading, emptyMessage = 'No data found', onRowClick }) => {
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -38,7 +38,7 @@ const Table = ({ columns, data, loading, emptyMessage = 'No data found' }) => {
         </thead>
         <tbody>
           {data.map((row, idx) => (
-            <tr key={row.id || idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+            <tr key={row.id || idx} style={{ borderBottom: '1px solid #f1f5f9', ...(onRowClick ? { cursor: 'pointer' } : {}) }} onClick={onRowClick ? () => onRowClick(row) : undefined}>
               {columns.map((col) => (
                 <td key={col.key} style={{ fontSize: '14px', color: '#475569' }}>
                   {col.render ? col.render(row) : row[col.key]}

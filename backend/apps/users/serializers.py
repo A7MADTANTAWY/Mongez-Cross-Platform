@@ -30,6 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
             "average_rating", "completed_jobs", "worker_id",
             "verification_status", "id_card_url",
             "verified_at", "rejection_reason", "language", "google_picture_url",
+            "is_active",
         ]
         read_only_fields = fields
 

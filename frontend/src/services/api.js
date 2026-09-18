@@ -170,6 +170,7 @@ export const adminAPI = {
     list: (params) => api.get('/admin/users/', { params }),
     create: (data) => api.post('/admin/users/create/', data),
     detail: (id) => api.get(`/admin/users/${id}/`),
+    profile: (id) => api.get(`/admin/users/${id}/profile/`),
     update: (id, data) => api.patch(`/admin/users/${id}/`, data),
     delete: (id) => api.delete(`/admin/users/${id}/`),
   },
@@ -193,6 +194,7 @@ export const adminAPI = {
   workers: {
     list: (params) => api.get('/admin/workers/', { params }),
     detail: (id) => api.get(`/admin/workers/${id}/`),
+    profile: (id) => api.get(`/admin/workers/${id}/profile/`),
     update: (id, data) => api.patch(`/admin/workers/${id}/`, data),
     verify: (id) => api.post(`/admin/workers/${id}/verify/`),
     reject: (id, reason) => api.post(`/admin/workers/${id}/reject/`, { reason }),

@@ -52,6 +52,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "scheduled_for",
             "commission",
             "status",
+            "cancellation_reason",
             "attachments",
             "created_at",
             "accepted_at",

@@ -1,9 +1,12 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.notifications.models import Notification
 from apps.users.models import Address, User
 from apps.workers.models import ServiceCategory, WorkerProfile
 from .models import Order
@@ -140,3 +143,114 @@ class OrderLifecycleTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         statuses = {o["status"] for o in response.data}
         self.assertEqual(statuses, {Order.PENDING})
+
+
+class OrderCancellationReasonTests(APITestCase):
+    """The cancellation flow must record *why* an order was cancelled so the
+    admin can tell a worker-delay cancellation apart from any other reason —
+    without ever assuming a reason the client didn't state."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.category = ServiceCategory.objects.create(name="Plumbing")
+        cls.client_user = User.objects.create_user(
+            username="delay_client", phone="+201000000020", password="Sup3r-Secret!",
+            role=User.Role.CLIENT, profile_completed=True,
+        )
+        cls.worker_user = User.objects.create_user(
+            username="slow_worker", phone="+201000000021", password="Sup3r-Secret!",
+            role=User.Role.WORKER, profile_completed=True,
+        )
+        WorkerProfile.objects.create(
+            user=cls.worker_user, profession="Plumbing", experience_years=3,
+        )
+        cls.admin_user = User.objects.create_user(
+            username="admin_delay", phone="+201000000022", password="Sup3r-Secret!",
+            role=User.Role.ADMIN, profile_completed=True,
+        )
+        cls.address = Address.objects.create(
+            user=cls.client_user, label="Home",
+            address="12 Test St", governorate="cairo", city="Nasr City",
+        )
+
+    def _accepted_order(self):
+        return Order.objects.create(
+            client=self.client_user,
+            worker=self.worker_user,
+            service_category=self.category,
+            address=self.address,
+            status=Order.ACCEPTED,
+            # A worker was accepted 2h ago and never showed up.
+            accepted_at=timezone.now() - timedelta(hours=2),
+            created_at=timezone.now() - timedelta(hours=3),
+        )
+
+    def test_cancel_with_worker_delay_reason_is_recorded_and_notifies_admins(self):
+        order = self._accepted_order()
+
+        self.client.force_authenticate(user=self.client_user)
+        with patch("apps.orders.views.paymob.void_commission", return_value={}):
+            resp = self.client.post(
+                reverse("order-cancel", args=[order.id]),
+                {"reason": Order.WORKER_DELAY}, format="json",
+            )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK, resp.data)
+        self.assertEqual(resp.data["status"], Order.CANCELLED)
+        self.assertEqual(resp.data["cancellation_reason"], Order.WORKER_DELAY)
+
+        order.refresh_from_db()
+        self.assertEqual(order.cancellation_reason, Order.WORKER_DELAY)
+        self.assertIsNotNone(order.cancelled_at)
+
+        # The admin received a notification naming the order and the worker.
+        notifs = self.admin_user.notifications.all()
+        self.assertTrue(notifs.exists())
+        latest = notifs.first()
+        self.assertIn(str(order.id), latest.message)
+        self.assertIn("slow_worker", latest.message)
+        self.assertEqual(latest.data.get("order_id"), order.id)
+        self.assertEqual(latest.data.get("reason"), Order.WORKER_DELAY)
+
+    def test_cancel_without_reason_leaves_reason_blank(self):
+        order = self._accepted_order()
+
+        self.client.force_authenticate(user=self.client_user)
+        with patch("apps.orders.views.paymob.void_commission", return_value={}):
+            resp = self.client.post(reverse("order-cancel", args=[order.id]))
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK, resp.data)
+        self.assertEqual(resp.data["cancellation_reason"], None)
+
+        order.refresh_from_db()
+        self.assertIsNone(order.cancellation_reason)
+
+        # No worker-delay alert fires for an unspecified cancellation.
+        self.assertFalse(self.admin_user.notifications.exists())
+
+    def test_cancel_due_to_other_reason_does_not_flag_worker_delay(self):
+        order = self._accepted_order()
+
+        self.client.force_authenticate(user=self.client_user)
+        with patch("apps.orders.views.paymob.void_commission", return_value={}):
+            resp = self.client.post(
+                reverse("order-cancel", args=[order.id]),
+                {"reason": Order.CANCELLATION_OTHER}, format="json",
+            )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK, resp.data)
+        self.assertEqual(resp.data["cancellation_reason"], Order.CANCELLATION_OTHER)
+        self.assertFalse(self.admin_user.notifications.exists())
+
+    def test_invalid_cancel_reason_is_rejected(self):
+        order = self._accepted_order()
+
+        self.client.force_authenticate(user=self.client_user)
+        resp = self.client.post(
+            reverse("order-cancel", args=[order.id]),
+            {"reason": "MAYBE_DELAY"}, format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", resp.data)
+        self.assertIn("reason", resp.data["error"])

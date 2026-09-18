@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 import Table from '../../components/admin/Table';
 import { usePolling, useTimeAgo } from '../../hooks/usePolling';
@@ -34,6 +35,7 @@ const emptyEditForm = {
 };
 
 const Workers = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [profileFilter, setProfileFilter] = useState('');
   const [verificationFilter, setVerificationFilter] = useState('');
@@ -264,6 +266,21 @@ const Workers = () => {
         : <span className="text-muted">—</span>,
     },
     {
+      key: 'delay_cancellations',
+      label: 'Incidents',
+      render: (row) => {
+        const n = row.delay_cancellations || 0;
+        if (n === 0) return <span className="text-muted">—</span>;
+        const repeated = n >= 2;
+        return (
+          <span className="badge rounded-pill px-2 py-1" style={{ backgroundColor: repeated ? '#ef444410' : '#f9731610', color: repeated ? '#dc2626' : '#ea580c', fontSize: '12px' }} title={repeated ? 'Multiple cancellations caused by this worker being late' : 'One cancellation caused by worker delay'}>
+            <i className={`bi ${repeated ? 'bi-exclamation-triangle-fill' : 'bi-clock-history'} me-1`}></i>
+            {n} delay{repeated ? ' · repeated' : ''}
+          </span>
+        );
+      },
+    },
+    {
       key: 'actions',
       label: '',
       render: (row) => {
@@ -407,7 +424,7 @@ const Workers = () => {
               <span>Showing {workers.length} of {total}</span>
             </div>
           </div>
-          <Table columns={columns} data={workers} loading={loading} emptyMessage="No workers match the current filter" />
+          <Table columns={columns} data={workers} loading={loading} emptyMessage="No workers match the current filter" onRowClick={(row) => row.user?.id && navigate(`/admin/workers/${row.user.id}`)} />
         </div>
       </div>
 
