@@ -109,6 +109,11 @@ export const categoriesAPI = {
   create: (data) => api.post('/categories/create/', data),
 };
 
+// Public payload powering the landing page — site config + live DB stats.
+export const siteAPI = {
+  home: () => api.get('/home/'),
+};
+
 // Static reference list shared with the mobile. Cached in-memory by
 // listGovernorates() below so the dropdown doesn't re-fetch on every
 // modal open.
@@ -180,6 +185,10 @@ export const adminAPI = {
   },
   ratings: {
     list: () => api.get('/admin/ratings/'),
+  },
+  siteConfig: {
+    get: () => api.get('/admin/site-config/'),
+    update: (data) => api.put('/admin/site-config/', data),
   },
   workers: {
     list: (params) => api.get('/admin/workers/', { params }),

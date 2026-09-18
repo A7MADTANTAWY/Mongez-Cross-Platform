@@ -1,8 +1,14 @@
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { useLandingData } from '../../context/LandingDataContext';
 
 function EmergencySection() {
   const { t } = useTranslation();
+  const { home } = useLandingData();
+  const config = home?.config;
+
+  const hotline = config?.hotline_phone?.trim() || '';
+  const responseTime = config?.response_time_text?.trim() || '';
 
   const features = [
     { icon: 'bi-patch-check-fill', text: t('emergency_feature_licensed') },
@@ -11,7 +17,7 @@ function EmergencySection() {
   ];
 
   return (
-    <section className="section-padding">
+    <section className="section-padding" id="emergency">
       <Container>
         <div className="emergency-card p-4 p-lg-5">
           <Row className="align-items-center g-4">
@@ -49,17 +55,28 @@ function EmergencySection() {
                     <i className="bi bi-telephone-outbound-fill fs-4"></i>
                   </div>
                   <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 4 }}>{t('emergency_hotline_label')}</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: 2, marginBottom: 12 }}>{t('emergency_phone')}</div>
-                  <Button variant="light" className="rounded-pill px-4 py-2 fw-semibold" style={{ color: '#dc2626', fontSize: 14 }}>
-                    <i className="bi bi-telephone me-2"></i>
-                    {t('emergency_phone')}
-                  </Button>
+                  <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: 2, marginBottom: 12 }}>
+                    {hotline || '—'}
+                  </div>
+                  {hotline ? (
+                    <Button as="a" href={`tel:${hotline}`} variant="light" className="rounded-pill px-4 py-2 fw-semibold" style={{ color: '#dc2626', fontSize: 14 }}>
+                      <i className="bi bi-telephone me-2"></i>
+                      {hotline}
+                    </Button>
+                  ) : (
+                    <Button variant="light" className="rounded-pill px-4 py-2 fw-semibold" style={{ color: '#dc2626', fontSize: 14 }} disabled>
+                      <i className="bi bi-telephone me-2"></i>
+                      {t('emergency_hotline_label')}
+                    </Button>
+                  )}
                 </div>
 
-                <div className="mt-4">
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('emergency_response_time_label')}</div>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{t('emergency_response_time_value')}</div>
-                </div>
+                {responseTime && (
+                  <div className="mt-4">
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('emergency_response_time_label')}</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{responseTime}</div>
+                  </div>
+                )}
               </div>
             </Col>
           </Row>

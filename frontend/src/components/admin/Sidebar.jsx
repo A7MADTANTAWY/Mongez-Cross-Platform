@@ -9,6 +9,7 @@ const menuItems = [
   { path: '/admin/categories', label: 'Categories', icon: 'bi-grid' },
   { path: '/admin/orders', label: 'Orders', icon: 'bi-cart-check' },
   { path: '/admin/ratings', label: 'Ratings', icon: 'bi-star' },
+  { path: '/admin/settings', label: 'Site Settings', icon: 'bi-gear' },
 ];
 
 const Sidebar = () => {

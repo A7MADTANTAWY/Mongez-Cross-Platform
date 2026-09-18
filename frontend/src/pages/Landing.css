@@ -98,6 +98,8 @@
 
 /* ── Global ── */
 html { scroll-behavior: smooth; }
+/* Keep anchored sections clear of the fixed header when scrolling to them. */
+section[id] { scroll-margin-top: 80px; }
 .landing-page {
   overflow-x: hidden;
   background: var(--bg);
@@ -456,6 +458,17 @@ html { scroll-behavior: smooth; }
   transition: color 0.2s ease;
 }
 .footer-link:hover { color: var(--primary); }
+.footer-link-btn {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; text-align: inherit;
+}
+.footer-link-btn:hover { color: var(--primary); }
+.footer-contact-link {
+  color: var(--footer-text);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.footer-contact-link:hover { color: var(--primary); }
 
 /* ── App Store Buttons ── */
 .app-store-btn {

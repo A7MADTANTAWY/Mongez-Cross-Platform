@@ -12,6 +12,7 @@ api_patterns = [
     path("health/", health, name="health"),
     path("", include("apps.users.urls")),
     path("", include("apps.workers.urls")),
+    path("", include("apps.site_config.urls")),
     path("", include("apps.orders.urls")),
     path("", include("apps.notifications.urls")),
     path("", include("apps.payments.urls")),

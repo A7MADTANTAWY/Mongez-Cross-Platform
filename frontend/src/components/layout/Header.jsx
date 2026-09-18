@@ -3,6 +3,7 @@ import { Container, Button, Offcanvas, Dropdown } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
+import { scrollToId } from '../../utils/scrollToId';
 import logo from '../../assets/images/a.png';
 
 function Header() {
@@ -31,8 +32,8 @@ function Header() {
     { id: 4, nameKey: 'nav_app', href: '#app' },
   ];
 
-  const scrollTo = (sel) => {
-    document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth' });
+  const scrollTo = (href) => {
+    scrollToId(href.replace('#', ''));
     setShowOffcanvas(false);
   };
 

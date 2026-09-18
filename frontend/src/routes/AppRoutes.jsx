@@ -15,6 +15,7 @@ const Workers = lazy(() => import('../pages/admin/Workers'));
 const Categories = lazy(() => import('../pages/admin/Categories'));
 const Orders = lazy(() => import('../pages/admin/Orders'));
 const Ratings = lazy(() => import('../pages/admin/Ratings'));
+const Settings = lazy(() => import('../pages/admin/Settings'));
 
 const PageLoader = () => (
   <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
@@ -82,6 +83,7 @@ function AppRoutes() {
               <Route path="categories" element={<Categories />} />
               <Route path="orders" element={<Orders />} />
               <Route path="ratings" element={<Ratings />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
 
             <Route path="/unauthorized" element={<UnauthorizedPage />} />

@@ -7,6 +7,7 @@ import WhyChoose from '../components/landing/WhyChoose';
 import AppPromotion from '../components/landing/AppPromotion';
 import EmergencySection from '../components/landing/EmergencySection';
 import Footer from '../components/layout/Footer';
+import { LandingDataProvider } from '../context/LandingDataContext';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import './Landing.css';
@@ -22,16 +23,18 @@ function LandingPage() {
 
   return (
     <div className="landing-page" data-theme={theme} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
-      <Header />
-      <main>
-        <Hero />
-        <Services />
-        <HowItWorks />
-        <WhyChoose />
-        <AppPromotion />
-        <EmergencySection />
-      </main>
-      <Footer />
+      <LandingDataProvider>
+        <Header />
+        <main>
+          <Hero />
+          <Services />
+          <HowItWorks />
+          <WhyChoose />
+          <AppPromotion />
+          <EmergencySection />
+        </main>
+        <Footer />
+      </LandingDataProvider>
     </div>
   );
 }

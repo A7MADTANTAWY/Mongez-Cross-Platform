@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'apps.users',
     'apps.workers',
+    'apps.site_config',
     'apps.notifications',
     'apps.payments',
     'apps.orders',

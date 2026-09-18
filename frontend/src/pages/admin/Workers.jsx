@@ -69,8 +69,6 @@ const Workers = () => {
   const pendingCount = data?.pending_count || 0;
   const verifiedCount = data?.verified_count || 0;
   const rejectedCount = data?.rejected_count || 0;
-  const totalWorkers = completeCount + incompleteCount;
-  const completionPct = totalWorkers ? Math.round((completeCount / totalWorkers) * 100) : 0;
   const updatedLabel = useTimeAgo(lastUpdatedAt);
 
   const viewDetail = async (worker) => {

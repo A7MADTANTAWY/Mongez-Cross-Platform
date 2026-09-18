@@ -1,9 +1,12 @@
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { useLandingData } from '../../context/LandingDataContext';
 
 function AppPromotion() {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.language === 'ar';
+  const { home } = useLandingData();
+  const config = home?.config;
 
   const features = [
     { icon: 'bi-shield-check', text: t('app_promotion_feature1_text') },
@@ -71,20 +74,40 @@ function AppPromotion() {
               </div>
 
               <div className="d-flex flex-wrap gap-3">
-                <Button className="app-store-btn">
-                  <i className="bi bi-apple fs-4"></i>
-                  <div className="text-start">
-                    <div style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.2 }}>{t('app_promotion_appstore_sub')}</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.2 }}>{t('app_promotion_appstore')}</div>
-                  </div>
-                </Button>
-                <Button className="app-store-btn">
-                  <i className="bi bi-google-play fs-4"></i>
-                  <div className="text-start">
-                    <div style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.2 }}>{t('app_promotion_googleplay_sub')}</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.2 }}>{t('app_promotion_googleplay')}</div>
-                  </div>
-                </Button>
+                {config?.app_store_url ? (
+                  <Button className="app-store-btn" href={config.app_store_url} target="_blank" rel="noopener noreferrer">
+                    <i className="bi bi-apple fs-4"></i>
+                    <div className="text-start">
+                      <div style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.2 }}>{t('app_promotion_appstore_sub')}</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.2 }}>{t('app_promotion_appstore')}</div>
+                    </div>
+                  </Button>
+                ) : (
+                  <Button className="app-store-btn" disabled>
+                    <i className="bi bi-apple fs-4"></i>
+                    <div className="text-start">
+                      <div style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.2 }}>{t('app_promotion_appstore_sub')}</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.2 }}>{t('app_promotion_appstore')}</div>
+                    </div>
+                  </Button>
+                )}
+                {config?.play_store_url ? (
+                  <Button className="app-store-btn" href={config.play_store_url} target="_blank" rel="noopener noreferrer">
+                    <i className="bi bi-google-play fs-4"></i>
+                    <div className="text-start">
+                      <div style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.2 }}>{t('app_promotion_googleplay_sub')}</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.2 }}>{t('app_promotion_googleplay')}</div>
+                    </div>
+                  </Button>
+                ) : (
+                  <Button className="app-store-btn" disabled>
+                    <i className="bi bi-google-play fs-4"></i>
+                    <div className="text-start">
+                      <div style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.2 }}>{t('app_promotion_googleplay_sub')}</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.2 }}>{t('app_promotion_googleplay')}</div>
+                    </div>
+                  </Button>
+                )}
               </div>
             </div>
           </Col>

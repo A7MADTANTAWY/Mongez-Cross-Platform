@@ -1,14 +1,25 @@
 import { Container, Row, Col } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { useLandingData } from '../../context/LandingDataContext';
 
 function WhyChoose() {
   const { t } = useTranslation();
+  const { home } = useLandingData();
+  const stats = home?.stats;
 
+  // The rating badge is computed from real review data; the other badges are
+  // kept number-free because none of the old percentage/response-time claims
+  // are measurable from the database.
   const features = [
-    { title: t('why_choose_feature1_title'), desc: t('why_choose_feature1_desc'), stats: t('why_choose_feature1_stats'), icon: 'bi-shield-check', color: 'var(--secondary)' },
-    { title: t('why_choose_feature2_title'), desc: t('why_choose_feature2_desc'), stats: t('why_choose_feature2_stats'), icon: 'bi-lightning-charge', color: 'var(--primary)' },
-    { title: t('why_choose_feature3_title'), desc: t('why_choose_feature3_desc'), stats: t('why_choose_feature3_stats'), icon: 'bi-star-fill', color: 'var(--warning)' },
-    { title: t('why_choose_feature4_title'), desc: t('why_choose_feature4_desc'), stats: t('why_choose_feature4_stats'), icon: 'bi-lock-fill', color: 'var(--accent)' },
+    { title: t('why_choose_feature1_title'), stats: t('why_choose_feature1_stats'), icon: 'bi-shield-check', color: 'var(--secondary)' },
+    { title: t('why_choose_feature2_title'), stats: t('why_choose_feature2_stats'), icon: 'bi-lightning-charge', color: 'var(--primary)' },
+    {
+      title: t('why_choose_feature3_title'),
+      dynamicStats: stats?.rating_count > 0 ? `${stats.average_rating}/5` : t('why_choose_feature3_stats'),
+      icon: 'bi-star-fill',
+      color: 'var(--warning)',
+    },
+    { title: t('why_choose_feature4_title'), stats: t('why_choose_feature4_stats'), icon: 'bi-lock-fill', color: 'var(--accent)' },
   ];
 
   return (
@@ -59,10 +70,14 @@ function WhyChoose() {
                       </div>
                       <div>
                         <h6 className="fw-bold mb-1" style={{ fontSize: 14, color: 'var(--text)' }}>{f.title}</h6>
-                        <span className="badge rounded-pill" style={{ background: `${f.color}12`, color: f.color, fontSize: 11, fontWeight: 600 }}>{f.stats}</span>
+                        <span className="badge rounded-pill" style={{ background: `${f.color}12`, color: f.color, fontSize: 11, fontWeight: 600 }}>
+                          {f.dynamicStats || f.stats}
+                        </span>
                       </div>
                     </div>
-                    <p className="mb-0" style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65 }}>{f.desc}</p>
+                    <p className="mb-0" style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                      {t(`why_choose_feature${i + 1}_desc`)}
+                    </p>
                   </div>
                 </Col>
               ))}
