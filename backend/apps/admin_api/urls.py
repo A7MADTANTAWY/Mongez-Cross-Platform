@@ -9,6 +9,7 @@ urlpatterns = [
     path("admin/users/<int:pk>/profile/", views.AdminUserProfileView.as_view(), name="admin-user-profile"),
     path("admin/categories/<int:pk>/", views.AdminCategoryUpdateDeleteView.as_view(), name="admin-category-detail"),
     path("admin/payments/", views.AdminPaymentListView.as_view(), name="admin-payment-list"),
+    path("admin/orders/", views.AdminOrderListView.as_view(), name="admin-order-list"),
     path("admin/orders/<int:pk>/status/", views.AdminOrderStatusView.as_view(), name="admin-order-status"),
     path("admin/workers/", views.AdminWorkerListView.as_view(), name="admin-worker-list"),
     path("admin/workers/<int:pk>/", views.AdminWorkerDetailView.as_view(), name="admin-worker-detail"),

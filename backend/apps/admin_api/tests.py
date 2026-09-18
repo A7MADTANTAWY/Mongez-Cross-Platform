@@ -155,6 +155,42 @@ class AdminApiAccessControlTests(TestCase):
         self.assertEqual(by_username[worker_a.username]["delay_cancellations"], 2)
         self.assertEqual(by_username[worker_b.username]["delay_cancellations"], 0)
 
+    def test_admin_orders_list_endpoint(self):
+        """The admin Orders page must list orders through a dedicated
+        /api/admin/orders/ endpoint. The public /api/orders/ endpoint
+        carries IsProfileCompleted, which rejects real admins (their
+        profile_completed is False) — that is why the dashboard page
+        showed an empty table instead of the orders."""
+        from apps.workers.models import ServiceCategory
+        cat = ServiceCategory.objects.create(name="Orders test")
+        Order.objects.create(
+            client=self.client_user, service_category=cat, status=Order.PENDING,
+        )
+        resolved = Order.objects.create(
+            client=self.client_user, service_category=cat, status=Order.COMPLETED,
+        )
+        # self.admin has profile_completed=False — exactly like production
+        # admins. The endpoint must still list all orders.
+        self._auth_as(self.admin)
+        r = self.api.get(reverse("admin-order-list"))
+        self.assertEqual(r.status_code, 200, r.content)
+        body = r.json()
+        self.assertEqual(body["count"], 2)
+        self.assertEqual(body["results"][0]["service_category"]["name"], "Orders test")
+        # Status filter.
+        r = self.api.get(reverse("admin-order-list"), {"status": "COMPLETED"})
+        self.assertEqual(r.json()["count"], 1)
+        self.assertEqual(r.json()["results"][0]["id"], resolved.id)
+        # Non-admins are rejected.
+        r = self.api.post(
+            "/api/auth/login/",
+            {"username": self.client_user.username, "password": "ClientPass123"},
+            format="json",
+        )
+        self.api.credentials(HTTP_AUTHORIZATION=f"Bearer {r.data['tokens']['access']}")
+        r = self.api.get(reverse("admin-order-list"))
+        self.assertEqual(r.status_code, 403)
+
 
 class AdminOrderStatusFanoutTests(TestCase):
     """The dashboard's admin status change is the load-bearing mutation

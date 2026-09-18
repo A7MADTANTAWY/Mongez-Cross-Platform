@@ -313,6 +313,38 @@ class AdminOrderStatusView(APIView):
         return Response(OrderSerializer(order, context={"request": request}).data)
 
 
+class AdminOrderListView(APIView):
+    """GET /api/admin/orders/ — paginated, newest-first list of every
+    order for the admin Orders page.
+
+    Lives on /api/admin/ instead of reusing /api/orders/ on purpose: the
+    public endpoint carries IsProfileCompleted, which rejects real admins
+    (their profile_completed is False) — the admin page used to get a
+    swallowed 403 and show an empty table. Admin only."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != User.Role.ADMIN:
+            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+
+        queryset = Order.objects.select_related(
+            "client", "worker", "service_category", "address",
+        )
+
+        status_filter = (request.query_params.get("status") or "").upper()
+        if status_filter:
+            valid = [s[0] for s in Order.STATUS_CHOICES]
+            if status_filter not in valid:
+                return Response(
+                    {"error": f"Invalid status. Must be one of: {', '.join(valid)}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            queryset = queryset.filter(status=status_filter)
+
+        return Response(_paged_orders(request, queryset))
+
+
 class AdminWorkerListView(APIView):
     permission_classes = [IsAuthenticated]
 

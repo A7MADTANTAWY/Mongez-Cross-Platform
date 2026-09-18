@@ -182,6 +182,7 @@ export const adminAPI = {
     list: () => api.get('/admin/payments/'),
   },
   orders: {
+    list: (params) => api.get('/admin/orders/', { params }),
     updateStatus: (id, status) => api.patch(`/admin/orders/${id}/status/`, { status }),
   },
   ratings: {

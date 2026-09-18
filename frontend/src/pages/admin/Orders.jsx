@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { ordersAPI, adminAPI } from '../../services/api';
+import { adminAPI } from '../../services/api';
 import Table from '../../components/admin/Table';
 import { usePolling, useTimeAgo } from '../../hooks/usePolling';
 import ExportCsvButton from '../../components/admin/ExportCsvButton';
@@ -17,13 +17,7 @@ const statusColors = {
 const allStatuses = ['PENDING', 'ACCEPTED', 'IN_PROGRESS', 'WAITING_CONFIRMATION', 'REJECTED', 'CANCELLED', 'COMPLETED'];
 
 const fetchOrders = () =>
-  ordersAPI.list({ page_size: 100 }).then((res) => {
-    // /api/orders/ returns a paginated {results} shape for clients/workers
-    // and a flat array for admin (DRF's default queryset filter). Handle
-    // both so the page works for everyone who gets here.
-    const data = res.data;
-    return Array.isArray(data) ? data : (data?.results || []);
-  });
+  adminAPI.orders.list({ page_size: 100 }).then((res) => res.data?.results || []);
 
 const Orders = () => {
   const [statusFilter, setStatusFilter] = useState('');
@@ -31,7 +25,7 @@ const Orders = () => {
 
   // 10 s — Orders is the most dynamic admin surface; we want a new mobile
   // order or an accept-from-worker to land in the UI within ten seconds.
-  const { data: orders, loading, lastUpdatedAt, refresh, setData } =
+  const { data: orders, loading, lastUpdatedAt, refresh, setData, error } =
     usePolling(fetchOrders, { intervalMs: 3_000, initialData: [] });
   const updatedLabel = useTimeAgo(lastUpdatedAt);
 
@@ -137,6 +131,18 @@ const Orders = () => {
           </select>
         </div>
       </div>
+
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center gap-2 mb-3" style={{ borderRadius: '12px', border: 'none' }}>
+          <i className="bi bi-exclamation-triangle-fill"></i>
+          <div>
+            <strong>Failed to load orders.</strong>{' '}
+            {error?.response?.status === 401 && 'Session expired — try refreshing.'}
+            {error?.response?.status === 403 && 'You do not have admin permissions.'}
+            {![401, 403].includes(error?.response?.status) && (error?.response?.data?.error || error?.message || 'Unknown error')}
+          </div>
+        </div>
+      )}
 
       <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
         <div className="card-body p-4">
