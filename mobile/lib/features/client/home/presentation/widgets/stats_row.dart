@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mongez/core/theme/app_colors.dart';
 import 'package:mongez/features/shared/workers/data/models/worker_model.dart';
+import 'package:mongez/generated/l10n.dart';
 
 class StatsRow extends StatelessWidget {
   final WorkerModel worker;
@@ -8,6 +9,7 @@ class StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = S.of(context);
     final tt = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
     Widget cell(String label, String value, IconData icon, Color color) {
@@ -38,13 +40,13 @@ class StatsRow extends StatelessWidget {
     }
     return Row(
       children: [
-        cell('Complete', '${worker.completionRate.round()}%',
+        cell(lang.completeStats, '${worker.completionRate.round()}%',
             Icons.check_circle_outline, AppColors.success),
         const SizedBox(width: 10),
-        cell('Accept', '${worker.acceptRate.round()}%',
+        cell(lang.acceptStats, '${worker.acceptRate.round()}%',
             Icons.task_alt_outlined, AppColors.primary),
         const SizedBox(width: 10),
-        cell('Experience', '${worker.experienceYears}y',
+        cell(lang.experience, '${worker.experienceYears}${lang.yearsShort}',
             Icons.workspace_premium_outlined, AppColors.highlight),
       ],
     );

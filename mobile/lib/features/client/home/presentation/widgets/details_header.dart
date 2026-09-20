@@ -3,6 +3,7 @@ import 'package:mongez/core/theme/app_colors.dart';
 import 'package:mongez/core/widgets/app_network_image.dart';
 import 'package:mongez/core/widgets/favorite_button.dart';
 import 'package:mongez/features/shared/workers/data/models/worker_model.dart';
+import 'package:mongez/generated/l10n.dart';
 
 class DetailsHeader extends StatelessWidget {
   final WorkerModel worker;
@@ -22,6 +23,7 @@ class DetailsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = S.of(context);
     final theme = Theme.of(context);
     final tt = theme.textTheme;
     return SliverToBoxAdapter(
@@ -139,7 +141,7 @@ class DetailsHeader extends StatelessWidget {
                             _GlassChip(
                               icon: Icons.workspace_premium_outlined,
                               iconColor: Colors.amber.shade200,
-                              text: 'Top rated',
+                              text: lang.topRated,
                             ),
                         ],
                       ),

@@ -23,22 +23,6 @@ enum OrderUrgency {
     }
   }
 
-  String get label {
-    switch (this) {
-      case OrderUrgency.low: return 'Whenever';
-      case OrderUrgency.normal: return 'Today';
-      case OrderUrgency.high: return 'Emergency';
-    }
-  }
-
-  String get labelAr {
-    switch (this) {
-      case OrderUrgency.low: return 'في أي وقت';
-      case OrderUrgency.normal: return 'اليوم';
-      case OrderUrgency.high: return 'طوارئ';
-    }
-  }
-
   static OrderUrgency fromApi(String? value) {
     switch ((value ?? 'NORMAL').toUpperCase()) {
       case 'LOW': return OrderUrgency.low;

@@ -286,6 +286,9 @@ class MessageLookup extends MessageLookupByLibrary {
         "jobs": MessageLookupByLibrary.simpleMessage("jobs"),
         "justNow": MessageLookupByLibrary.simpleMessage("Just now"),
         "language": MessageLookupByLibrary.simpleMessage("Language"),
+        "languageArabic": MessageLookupByLibrary.simpleMessage("Arabic"),
+        "languageEnglish": MessageLookupByLibrary.simpleMessage("English"),
+        "languageFrench": MessageLookupByLibrary.simpleMessage("French"),
         "languages": MessageLookupByLibrary.simpleMessage("Languages"),
         "leave": MessageLookupByLibrary.simpleMessage("Leave"),
         "leaveWarningDesc": MessageLookupByLibrary.simpleMessage(
@@ -469,6 +472,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "somethingWentWrong":
             MessageLookupByLibrary.simpleMessage("Oops! Something went wrong."),
         "specializesIn": MessageLookupByLibrary.simpleMessage("Specializes in"),
+        "specialties": MessageLookupByLibrary.simpleMessage("Specialties"),
         "statusLabel": MessageLookupByLibrary.simpleMessage("Status: "),
         "stay": MessageLookupByLibrary.simpleMessage("Stay"),
         "submitRating": MessageLookupByLibrary.simpleMessage("Submit Rating"),
@@ -489,6 +493,9 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Trusted Services"),
         "unexpectedError":
             MessageLookupByLibrary.simpleMessage("Unexpected error occurred"),
+        "urgencyEmergency": MessageLookupByLibrary.simpleMessage("Emergency"),
+        "urgencyToday": MessageLookupByLibrary.simpleMessage("Today"),
+        "urgencyWhenever": MessageLookupByLibrary.simpleMessage("Whenever"),
         "useAccountPhone":
             MessageLookupByLibrary.simpleMessage("Use account phone"),
         "useSavedAddress":
@@ -521,6 +528,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "years": MessageLookupByLibrary.simpleMessage("years"),
         "yearsOfExperience":
             MessageLookupByLibrary.simpleMessage("Years of Experience"),
+        "yearsShort": MessageLookupByLibrary.simpleMessage("y"),
         "yes": MessageLookupByLibrary.simpleMessage("Yes")
       };
 }

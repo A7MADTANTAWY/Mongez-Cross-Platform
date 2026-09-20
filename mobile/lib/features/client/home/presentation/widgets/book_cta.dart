@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mongez/core/theme/app_colors.dart';
+import 'package:mongez/generated/l10n.dart';
 
 class BookCTA extends StatelessWidget {
   final VoidCallback onTap;
@@ -9,6 +10,7 @@ class BookCTA extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = S.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
@@ -41,9 +43,9 @@ class BookCTA extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const Text(
-                    'per hour',
-                    style: TextStyle(
+                  Text(
+                    lang.perHour,
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

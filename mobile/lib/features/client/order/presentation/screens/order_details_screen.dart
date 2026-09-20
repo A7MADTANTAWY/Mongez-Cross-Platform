@@ -96,7 +96,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = S.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -152,7 +151,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     spacing: 8,
                     runSpacing: 6,
                     children: [
-                      UrgencyPill(urgency: _order.urgency, locale: locale),
+                      UrgencyPill(urgency: _order.urgency),
                       if (_order.scheduledFor != null)
                         MetaPill(
                           icon: Icons.schedule_outlined,

@@ -110,20 +110,20 @@ class _DetailsViewState extends State<DetailsView> {
                   if (minCharge != null)
                     InfoRow(
                       icon: Icons.receipt_long_outlined,
-                      label: 'Call-out fee',
+                      label: lang.callOutFee,
                       value: minCharge,
                     ),
                   if (w.languages.isNotEmpty)
                     InfoRow(
                       icon: Icons.language_outlined,
-                      label: 'Languages',
-                      value: w.languages.map(_langName).join(' · '),
+                      label: lang.languages,
+                      value: w.languages.map((c) => _langName(lang, c)).join(' · '),
                     ),
                   if (w.serviceRadiusKm > 0)
                     InfoRow(
                       icon: Icons.location_searching,
-                      label: 'Service area',
-                      value: 'within ${w.serviceRadiusKm} km',
+                      label: lang.serviceArea,
+                      value: lang.withinKm(w.serviceRadiusKm),
                     ),
                 ],
               ),
@@ -132,7 +132,7 @@ class _DetailsViewState extends State<DetailsView> {
           if (w.specialtiesFor(locale).isNotEmpty)
             SliverToBoxAdapter(
               child: DetailsSection(
-                title: 'Specialties',
+                title: lang.specialties,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                   child: Wrap(
@@ -203,11 +203,11 @@ class _DetailsViewState extends State<DetailsView> {
     return '$body $symbol';
   }
 
-  static String _langName(String code) {
+  static String _langName(S lang, String code) {
     switch (code) {
-      case 'ar': return 'Arabic';
-      case 'en': return 'English';
-      case 'fr': return 'French';
+      case 'ar': return lang.languageArabic;
+      case 'en': return lang.languageEnglish;
+      case 'fr': return lang.languageFrench;
       default:    return code.toUpperCase();
     }
   }

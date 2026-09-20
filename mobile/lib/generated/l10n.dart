@@ -1530,6 +1530,36 @@ class S {
     );
   }
 
+  /// `Whenever`
+  String get urgencyWhenever {
+    return Intl.message(
+      'Whenever',
+      name: 'urgencyWhenever',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Today`
+  String get urgencyToday {
+    return Intl.message(
+      'Today',
+      name: 'urgencyToday',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Emergency`
+  String get urgencyEmergency {
+    return Intl.message(
+      'Emergency',
+      name: 'urgencyEmergency',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Experience`
   String get experience {
     return Intl.message(
@@ -1560,6 +1590,16 @@ class S {
     );
   }
 
+  /// `y`
+  String get yearsShort {
+    return Intl.message(
+      'y',
+      name: 'yearsShort',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `jobs`
   String get jobs {
     return Intl.message(
@@ -1585,6 +1625,16 @@ class S {
     return Intl.message(
       'Specializes in',
       name: 'specializesIn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Specialties`
+  String get specialties {
+    return Intl.message(
+      'Specialties',
+      name: 'specialties',
       desc: '',
       args: [],
     );
@@ -1685,6 +1735,36 @@ class S {
     return Intl.message(
       'English',
       name: 'english',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Arabic`
+  String get languageArabic {
+    return Intl.message(
+      'Arabic',
+      name: 'languageArabic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `English`
+  String get languageEnglish {
+    return Intl.message(
+      'English',
+      name: 'languageEnglish',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `French`
+  String get languageFrench {
+    return Intl.message(
+      'French',
+      name: 'languageFrench',
       desc: '',
       args: [],
     );

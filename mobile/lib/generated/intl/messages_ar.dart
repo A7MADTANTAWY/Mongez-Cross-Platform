@@ -280,6 +280,9 @@ class MessageLookup extends MessageLookupByLibrary {
         "jobs": MessageLookupByLibrary.simpleMessage("وظائف"),
         "justNow": MessageLookupByLibrary.simpleMessage("الآن"),
         "language": MessageLookupByLibrary.simpleMessage("اللغة"),
+        "languageArabic": MessageLookupByLibrary.simpleMessage("العربية"),
+        "languageEnglish": MessageLookupByLibrary.simpleMessage("English"),
+        "languageFrench": MessageLookupByLibrary.simpleMessage("الفرنسية"),
         "languages": MessageLookupByLibrary.simpleMessage("اللغات"),
         "leave": MessageLookupByLibrary.simpleMessage("أمشي"),
         "leaveWarningDesc": MessageLookupByLibrary.simpleMessage(
@@ -461,6 +464,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "somethingWentWrong":
             MessageLookupByLibrary.simpleMessage("حدث خطأ ما!"),
         "specializesIn": MessageLookupByLibrary.simpleMessage("متخصص في"),
+        "specialties": MessageLookupByLibrary.simpleMessage("التخصصات"),
         "statusLabel": MessageLookupByLibrary.simpleMessage("الحالة: "),
         "stay": MessageLookupByLibrary.simpleMessage("أبقى"),
         "submitRating": MessageLookupByLibrary.simpleMessage("إرسال التقييم"),
@@ -480,6 +484,9 @@ class MessageLookup extends MessageLookupByLibrary {
         "trustedServices": MessageLookupByLibrary.simpleMessage("خدمات موثوقة"),
         "unexpectedError":
             MessageLookupByLibrary.simpleMessage("حدث خطأ غير متوقع"),
+        "urgencyEmergency": MessageLookupByLibrary.simpleMessage("طوارئ"),
+        "urgencyToday": MessageLookupByLibrary.simpleMessage("اليوم"),
+        "urgencyWhenever": MessageLookupByLibrary.simpleMessage("في أي وقت"),
         "useAccountPhone":
             MessageLookupByLibrary.simpleMessage("استخدام رقم هاتف الحساب"),
         "useSavedAddress":
@@ -512,6 +519,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "years": MessageLookupByLibrary.simpleMessage("سنوات"),
         "yearsOfExperience":
             MessageLookupByLibrary.simpleMessage("سنوات الخبرة"),
+        "yearsShort": MessageLookupByLibrary.simpleMessage("س"),
         "yes": MessageLookupByLibrary.simpleMessage("نعم")
       };
 }
