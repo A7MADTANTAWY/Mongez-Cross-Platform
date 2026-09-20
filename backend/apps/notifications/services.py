@@ -17,6 +17,7 @@ import os
 from django.conf import settings
 
 from .models import DeviceToken, Notification
+from .translations import t
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +25,45 @@ _fcm_access_token = None
 _fcm_token_expiry = 0
 
 
-def notify(user, title, message, notif_type=Notification.IN_APP, data=None):
+def notify(
+    user,
+    title=None,
+    message=None,
+    notif_type=Notification.IN_APP,
+    data=None,
+    translation_key=None,
+    translation_params=None,
+):
+    """Persist a notification (and fan out to FCM when type is PUSH).
+
+    If `translation_key` is provided, the caller no longer pre-translates:
+    this helper calls `t(user, key, **params)` itself so the row stores the
+    key + params for lazy re-translation, while the SEND-TIME snapshot
+    (title/message) is still computed here and used for the FCM push payload
+    (push text must be ready at send time — it reaches a real device).
+    """
+    params = dict(translation_params or {})
+    if translation_key:
+        try:
+            title, message = t(user, translation_key, **params)
+        except Exception as exc:  # never block delivery on a bad template
+            logger.warning(
+                "Translation for key %r failed: %s", translation_key, exc
+            )
+
     record = Notification.objects.create(
         user=user,
-        title=title,
-        message=message,
+        title=title or "",
+        message=message or "",
         type=notif_type,
         data=data or {},
+        translation_key=translation_key or "",
+        translation_params=params,
     )
 
     if notif_type == Notification.PUSH:
         try:
-            _push_to_devices(user, title, message, data or {})
+            _push_to_devices(user, record.title, record.message, data or {})
         except Exception as exc:  # pragma: no cover — best-effort delivery
             logger.warning("FCM push to user %s failed: %s", user.id, exc)
 

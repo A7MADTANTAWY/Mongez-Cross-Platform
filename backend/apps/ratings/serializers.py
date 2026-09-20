@@ -65,24 +65,36 @@ class RatingSerializer(serializers.ModelSerializer):
 
             stars = rating.stars
             client_label = client.name_ar or client.username
+            data = {
+                "kind": "rating",
+                "order_id": order.id,
+                "rating_id": rating.id,
+                "stars": stars,
+            }
             if rating.review:
+                # Free-text review written by the client is not catalog text —
+                # keep title/message direct (no lazy key). Title still uses the
+                # translated template; the message is the client's own words.
                 title, message = t(worker, "rating_received",
                     stars=stars, client=client_label, review=rating.review)
+                notify(
+                    worker, title, message,
+                    notif_type=Notification.PUSH, data=data,
+                )
             else:
-                title, message = t(worker, "rating_received_default",
-                    stars=stars, client=client_label, order_id=order.id)
-            notify(
-                worker,
-                title,
-                message,
-                notif_type=Notification.PUSH,
-                data={
-                    "kind": "rating",
-                    "order_id": order.id,
-                    "rating_id": rating.id,
-                    "stars": stars,
-                },
-            )
+                # Catalog template only → store key + params so the worker's
+                # language change re-translates the notification lazily.
+                notify(
+                    worker,
+                    notif_type=Notification.PUSH,
+                    data=data,
+                    translation_key="rating_received_default",
+                    translation_params={
+                        "stars": stars,
+                        "client": client_label,
+                        "order_id": order.id,
+                    },
+                )
         except Exception:  # pragma: no cover — best-effort
             pass
 

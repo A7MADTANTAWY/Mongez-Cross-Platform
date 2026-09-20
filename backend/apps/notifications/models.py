@@ -28,6 +28,12 @@ class Notification(models.Model):
     # Optional structured payload — useful for "open order #42" deep links from a push tap
     data = models.JSONField(default=dict, blank=True)
 
+    # Lazy translation: when set, the stored title/message act only as a
+    # send-time snapshot (and FCM push text). The serializer re-translates
+    # from this catalog key + params against the viewer's CURRENT language.
+    translation_key = models.CharField(max_length=64, blank=True, default="")
+    translation_params = models.JSONField(default=dict, blank=True)
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [

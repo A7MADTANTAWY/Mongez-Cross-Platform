@@ -36,7 +36,9 @@ class NotificationListView(APIView):
             page_size = 30
         offset = (page - 1) * page_size
         qs = qs[offset : offset + page_size]
-        return Response(NotificationSerializer(qs, many=True).data)
+        return Response(
+            NotificationSerializer(qs, many=True, context={"request": request}).data
+        )
 
 
 class NotificationUnreadCountView(APIView):
@@ -62,7 +64,9 @@ class NotificationMarkReadView(APIView):
             )
         notif.is_read = True
         notif.save()
-        return Response(NotificationSerializer(notif).data)
+        return Response(
+            NotificationSerializer(notif, context={"request": request}).data
+        )
 
 
 class NotificationMarkAllReadView(APIView):

@@ -14,7 +14,6 @@ from rest_framework.views import APIView
 
 from apps.notifications.models import Notification
 from apps.notifications.services import notify
-from apps.notifications.translations import t
 from apps.payments.models import CommissionPayment
 from apps.payments import paymob
 from apps.users.models import User
@@ -36,10 +35,21 @@ def now():
     return dj_timezone.now()
 
 
-def send_notification(user, title, message, notif_type=Notification.IN_APP, data=None):
+def send_notification(
+    user,
+    title=None,
+    message=None,
+    notif_type=Notification.IN_APP,
+    data=None,
+    translation_key=None,
+    translation_params=None,
+):
     """Thin wrapper kept for backwards-compat. Delegates to notifications.services.notify
     which also fans out to FCM device tokens when registered."""
-    return notify(user=user, title=title, message=message, notif_type=notif_type, data=data)
+    return notify(
+        user=user, title=title, message=message, notif_type=notif_type, data=data,
+        translation_key=translation_key, translation_params=translation_params,
+    )
 
 
 def authorize_commission(order):
@@ -214,14 +224,21 @@ class OrderListCreateView(APIView):
         )
 
         for wp in available_workers:
-            if order.worker and order.worker == wp.user:
-                title, message = t(wp.user, "selected_for_order",
-                    service=order.service_category.name, order_id=order.id)
-            else:
-                title, message = t(wp.user, "new_order_available",
-                    service=order.service_category.name, order_id=order.id)
-
-            send_notification(wp.user, title=title, message=message, notif_type=Notification.PUSH)
+            params = {
+                "service": order.service_category.name,
+                "order_id": order.id,
+            }
+            key = (
+                "selected_for_order"
+                if order.worker and order.worker == wp.user
+                else "new_order_available"
+            )
+            send_notification(
+                wp.user,
+                notif_type=Notification.PUSH,
+                translation_key=key,
+                translation_params=params,
+            )
 
         response_data = OrderSerializer(order, context={"request": request}).data
         response_data["payment_key"] = payment_key
@@ -351,14 +368,18 @@ class OrderAcceptView(APIView):
             logger.error(f"Paymob CAPTURE failed for Order #{order.id}: {e}")
 
         # Notify client
-        title, message = t(order.client, "order_accepted",
-            username=request.user.name_ar or request.user.display_name or request.user.username,
-            order_id=order.id)
         send_notification(
             order.client,
-            title=title,
-            message=message,
             notif_type=Notification.PUSH,
+            translation_key="order_accepted",
+            translation_params={
+                "username": (
+                    request.user.name_ar
+                    or request.user.display_name
+                    or request.user.username
+                ),
+                "order_id": order.id,
+            },
         )
         return Response(OrderSerializer(order, context={"request": request}).data)
 
@@ -407,12 +428,11 @@ class OrderRejectView(APIView):
             logger.error(f"Paymob VOID failed for Order #{order.id}: {e}")
 
         # Notify client
-        title, message = t(order.client, "order_rejected", order_id=order.id)
         send_notification(
             order.client,
-            title=title,
-            message=message,
             notif_type=Notification.PUSH,
+            translation_key="order_rejected",
+            translation_params={"order_id": order.id},
         )
         return Response(OrderSerializer(order, context={"request": request}).data)
 
@@ -497,12 +517,11 @@ class OrderCancelView(APIView):
 
         # Notify worker if one was assigned
         if order.worker:
-            title, message = t(order.worker, "order_cancelled", order_id=order.id)
             send_notification(
                 order.worker,
-                title=title,
-                message=message,
                 notif_type=Notification.PUSH,
+                translation_key="order_cancelled",
+                translation_params={"order_id": order.id},
             )
 
         # A client explicitly cancelled an accepted job because the worker
@@ -580,13 +599,14 @@ class OrderCompleteView(APIView):
         order.save(update_fields=["status", "marked_finished_at"])
 
         # Ping the client to confirm.
-        title, message = t(order.client, "order_finished_confirm",
-            order_id=order.id, service=order.service_category.name)
         send_notification(
             order.client,
-            title=title,
-            message=message,
             notif_type=Notification.PUSH,
+            translation_key="order_finished_confirm",
+            translation_params={
+                "order_id": order.id,
+                "service": order.service_category.name,
+            },
         )
         return Response(OrderSerializer(order, context={"request": request}).data)
 
@@ -638,19 +658,19 @@ class OrderConfirmCompletionView(APIView):
                 profile.save(update_fields=["completed_jobs"])
 
             # Ask the worker to celebrate, prompt the client to rate.
-            title, message = t(order.worker, "order_closed_worker",
-                order_id=order.id, service=order.service_category.name)
             send_notification(
                 order.worker,
-                title=title,
-                message=message,
                 notif_type=Notification.PUSH,
+                translation_key="order_closed_worker",
+                translation_params={
+                    "order_id": order.id,
+                    "service": order.service_category.name,
+                },
             )
-        title, message = t(request.user, "rate_worker", order_id=order.id)
         send_notification(
             request.user,
-            title=title,
-            message=message,
             notif_type=Notification.PUSH,
+            translation_key="rate_worker",
+            translation_params={"order_id": order.id},
         )
         return Response(OrderSerializer(order, context={"request": request}).data)
