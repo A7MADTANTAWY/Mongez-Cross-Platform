@@ -62,6 +62,7 @@ class _FilterSheetState extends State<_FilterSheet> {
   @override
   Widget build(BuildContext context) {
     final lang = S.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
@@ -113,7 +114,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                         ? _selectedCategoryId == null
                         : _selectedCategoryId == cat!.id;
                     return FilterChip(
-                      label: Text(isAll ? lang.allCategories : (cat?.name ?? '')),
+                      label: Text(isAll ? lang.allCategories : (cat?.displayName(locale) ?? '')),
                       selected: isSelected,
                       onSelected: (_) {
                         setState(() {

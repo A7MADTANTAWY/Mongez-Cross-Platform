@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mongez/generated/l10n.dart';
 
@@ -26,6 +28,8 @@ class CustomSearchBar extends StatefulWidget {
 class _CustomSearchBarState extends State<CustomSearchBar> {
   final _focusNode = FocusNode();
   bool _focused = false;
+  Timer? _debounce;
+  static const _debounceDuration = Duration(milliseconds: 450);
 
   @override
   void initState() {
@@ -41,14 +45,26 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
     super.dispose();
   }
 
   void _clear() {
+    _debounce?.cancel();
     widget.controller.clear();
     widget.onSearch('');
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(_debounceDuration, () => widget.onSearch(value));
+  }
+
+  void _onSubmitted(String value) {
+    _debounce?.cancel();
+    widget.onSearch(value);
   }
 
   @override
@@ -92,7 +108,8 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                 textInputAction: TextInputAction.search,
                 cursorColor: cs.primary,
                 style: tt.bodyMedium,
-                onSubmitted: widget.onSearch,
+                onChanged: _onChanged,
+                onSubmitted: _onSubmitted,
                 decoration: InputDecoration(
                   hintText: widget.hintText ?? lang.searchHint,
                   hintStyle: tt.bodyMedium?.copyWith(

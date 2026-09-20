@@ -71,7 +71,7 @@ class WorkerListView(APIView):
 
     Optional query params:
         ?category=<id>             filter by service category ID
-        ?search=<text>             match profession or username (case-insensitive)
+        ?search=<text>             match worker name, profession (ar/en), or username
         ?min_rating=<float>        only workers with average_rating >= n
         ?available=<true|false>    override the default availability filter
         ?ordering=<field>          one of: score (default), -score,
@@ -123,6 +123,10 @@ class WorkerListView(APIView):
         if search:
             queryset = queryset.filter(
                 Q(profession__icontains=search)
+                | Q(profession_ar__icontains=search)
+                | Q(user__name_ar__icontains=search)
+                | Q(user__first_name__icontains=search)
+                | Q(user__last_name__icontains=search)
                 | Q(user__username__icontains=search)
             )
 

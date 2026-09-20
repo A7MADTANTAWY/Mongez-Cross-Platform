@@ -53,6 +53,28 @@ class WorkerListTests(APITestCase):
         usernames = [w["user"]["username"] for w in response.data["results"]]
         self.assertIn("bob", usernames)
 
+    def test_search_matches_worker_arabic_display_name(self):
+        self.bob.name_ar = "أحمد السباك"
+        self.bob.save(update_fields=["name_ar"])
+        response = self.client.get(reverse("worker-list"), {"search": "أحمد"})
+        usernames = [w["user"]["username"] for w in response.data["results"]]
+        self.assertIn("bob", usernames)
+
+    def test_search_matches_worker_first_last_name(self):
+        self.alice.first_name = "Alice"
+        self.alice.last_name = "Wonderland"
+        self.alice.save(update_fields=["first_name", "last_name"])
+        response = self.client.get(reverse("worker-list"), {"search": "Wonderland"})
+        usernames = [w["user"]["username"] for w in response.data["results"]]
+        self.assertIn("alice", usernames)
+
+    def test_search_matches_arabic_profession(self):
+        self.bob.worker_profile.profession_ar = "سباك"
+        self.bob.worker_profile.save(update_fields=["profession_ar"])
+        response = self.client.get(reverse("worker-list"), {"search": "سباك"})
+        usernames = [w["user"]["username"] for w in response.data["results"]]
+        self.assertIn("bob", usernames)
+
     def test_stats_endpoint(self):
         profile = self.alice.worker_profile
         response = self.client.get(
