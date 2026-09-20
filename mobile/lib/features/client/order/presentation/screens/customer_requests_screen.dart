@@ -54,7 +54,7 @@ class _RequistesScreenState extends State<RequistesScreen> {
   Widget build(BuildContext context) {
     final lang = S.of(context);
     return Scaffold(
-      appBar: CustomAppBar(title: lang.myRequests),
+      appBar: CustomAppBar(title: lang.myRequests, showBackButton: false),
       body: BlocBuilder<CustomerOrdersCubit, CustomerOrdersState>(
         builder: (context, state) {
           if (state is CustomerOrdersInitial || state is CustomerOrdersLoading) {

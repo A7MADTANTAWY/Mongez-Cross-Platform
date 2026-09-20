@@ -8,6 +8,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double height;
   final bool centerTitle;
   final bool showNotification;
+  final bool showBackButton;
 
   const CustomAppBar({
     super.key,
@@ -15,6 +16,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.height = kToolbarHeight,
     this.centerTitle = true,
     this.showNotification = true,
+    this.showBackButton = true,
   });
 
   @override
@@ -30,7 +32,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: centerTitle,
-      leading: Navigator.canPop(context)
+      leading: (showBackButton && Navigator.canPop(context))
           ? Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Material(

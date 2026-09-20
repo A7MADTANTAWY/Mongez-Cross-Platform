@@ -16,7 +16,7 @@ class FavoiriteScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: CustomAppBar(title: lang.favorites),
+      appBar: CustomAppBar(title: lang.favorites, showBackButton: false),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: BlocBuilder<FavoritesCubit, FavoritesState>(
         builder: (context, state) {

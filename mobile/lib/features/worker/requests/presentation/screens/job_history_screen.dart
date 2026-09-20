@@ -15,7 +15,7 @@ class JobHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = S.of(context);
     return Scaffold(
-      appBar: CustomAppBar(title: lang.jobHistory),
+      appBar: CustomAppBar(title: lang.jobHistory, showBackButton: false),
       body: BlocBuilder<JobHistoryCubit, JobHistoryState>(
         builder: (context, state) {
           if (state is JobHistoryInitial || state is JobHistoryLoading) {

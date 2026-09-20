@@ -26,6 +26,7 @@ class DetailsHeader extends StatelessWidget {
     final lang = S.of(context);
     final theme = Theme.of(context);
     final tt = theme.textTheme;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     return SliverToBoxAdapter(
       child: Container(
         decoration: BoxDecoration(
@@ -41,7 +42,9 @@ class DetailsHeader extends StatelessWidget {
             Row(
               children: [
                 _CircleButton(
-                  icon: Icons.arrow_back_rounded,
+                  icon: isRtl
+                      ? Icons.arrow_forward_rounded
+                      : Icons.arrow_back_rounded,
                   onTap: () => Navigator.maybePop(context),
                 ),
                 const Spacer(),

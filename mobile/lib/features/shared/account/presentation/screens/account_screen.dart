@@ -49,7 +49,7 @@ class _AccountScreenState extends State<AccountScreen> {
     final tt = theme.textTheme;
 
     return Scaffold(
-      appBar: CustomAppBar(title: lang.account),
+      appBar: CustomAppBar(title: lang.account, showBackButton: false),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: ListenableBuilder(
         listenable: _addressRepo,

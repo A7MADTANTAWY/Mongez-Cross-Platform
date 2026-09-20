@@ -55,7 +55,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   Widget build(BuildContext context) {
     final lang = S.of(context);
     return Scaffold(
-      appBar: CustomAppBar(title: lang.requests),
+      appBar: CustomAppBar(title: lang.requests, showBackButton: false),
       body: BlocBuilder<TechnicianOrdersCubit, TechnicianOrdersState>(
         builder: (context, state) {
           if (state is TechnicianOrdersInitial || state is TechnicianOrdersLoading) {
