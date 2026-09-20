@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mongez/core/di/services_locator.dart';
 import 'package:mongez/core/locale/localization_cubit.dart';
+import 'package:mongez/core/routing/navigation_service.dart';
 import 'package:mongez/core/theme/app_themes.dart';
 import 'package:mongez/core/theme/theme_cubit.dart';
 import 'package:mongez/features/auth/bloc/auth_cubit.dart';
@@ -109,6 +110,7 @@ class MyApp extends StatelessWidget {
                 builder: (context, localeState) {
                   return MaterialApp(
                     debugShowCheckedModeBanner: false,
+                    navigatorKey: NavigationService.navigatorKey,
                     theme: AppThemes.lightTheme,
                     darkTheme: AppThemes.darkTheme,
                     themeMode: themeState.themeMode,

@@ -66,6 +66,19 @@ class NotificationCubit extends Cubit<NotificationState> {
 
   int get unreadCount => _unreadCount;
 
+  /// Applies a live FCM foreground message instantly (no waiting for the
+  /// poll): bump the badge, prepend the item to the cached list, and emit
+  /// so the UI updates immediately.
+  void applyIncomingNotification(NotificationModel notif) {
+    _unreadCount++;
+    if (_cached != null) {
+      _cached = [notif, ..._cached!.where((n) => n.id != notif.id)];
+      emit(NotificationSuccess(_cached!, _unreadCount));
+    } else {
+      emit(NotificationCountChanged(_unreadCount));
+    }
+  }
+
   /// Full list reload — first page. Called when the screen opens.
   Future<void> refresh() async {
     _currentPage = 1;
@@ -105,7 +118,9 @@ class NotificationCubit extends Cubit<NotificationState> {
   }
 
   /// Page 1 refreshes prepend new items on top; later pages append at the
-  /// bottom. Items already held are kept (dedup by id).
+  /// bottom. Items already held are kept (dedup by id). Pre-push placeholders
+  /// (negative ids) are dropped on a first-page refresh — the server snapshot
+  /// now carries the authoritative row with a real id.
   List<NotificationModel> _mergePage(List<NotificationModel> page, bool isFirstPage) {
     final existing = _cached ?? const <NotificationModel>[];
     final seen = <int>{};
@@ -115,6 +130,7 @@ class NotificationCubit extends Cubit<NotificationState> {
         if (seen.add(n.id)) merged.add(n);
       }
       for (final n in existing) {
+        if (n.id < 0) continue;
         if (seen.add(n.id)) merged.add(n);
       }
     } else {

@@ -6,6 +6,7 @@ import 'package:mongez/core/constants/api_constants.dart';
 import 'package:mongez/core/di/services_locator.dart';
 import 'package:mongez/core/network/api_service.dart';
 import 'package:mongez/features/auth/bloc/auth_cubit.dart';
+import 'package:mongez/features/shared/notifications/presentation/cubit/notification_cubit.dart';
 import 'package:mongez/features/worker/profile_setup/presentation/screens/complete_profile_screen.dart';
 import 'package:mongez/features/worker/profile_setup/presentation/screens/pending_verification_screen.dart';
 import 'package:mongez/core/routing/navigation_service.dart';
@@ -44,6 +45,7 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
+          fcmService.attachNotificationCubit(context.read<NotificationCubit>());
           fcmService.initAfterLogin(getIt.get<ApiService>());
           final profileCompleted = state.auth.profileCompleted ?? false;
           final verificationStatus = state.auth.verificationStatus ?? 'verified';

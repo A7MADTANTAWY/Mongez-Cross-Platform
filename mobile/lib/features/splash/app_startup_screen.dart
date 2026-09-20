@@ -7,13 +7,13 @@ import 'package:mongez/core/di/services_locator.dart';
 import 'package:mongez/core/error/failure.dart';
 import 'package:mongez/core/network/api_service.dart';
 import 'package:mongez/core/routing/navigation_service.dart';
-import 'package:mongez/core/services/fcm_service.dart';
 import 'package:mongez/core/utils/pref_helper.dart';
 import 'package:mongez/features/auth/bloc/auth_cubit.dart';
 import 'package:mongez/features/auth/models/auth.dart';
 import 'package:mongez/features/auth/models/tokens.dart';
 import 'package:mongez/features/auth/models/user.dart';
 import 'package:mongez/features/auth/screens/google_sign_in_screen.dart';
+import 'package:mongez/features/shared/notifications/presentation/cubit/notification_cubit.dart';
 import 'package:mongez/features/shared/profile/data/models/profile_model.dart';
 import 'package:mongez/features/shared/profile/domain/profile_repository.dart';
 import 'package:mongez/features/worker/profile_setup/presentation/screens/complete_profile_screen.dart';
@@ -80,6 +80,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
 
   void _goToProfileOrMain(ProfileModel profile, String token) {
     // Initialize FCM: request permission, get token, register with backend.
+    fcmService.attachNotificationCubit(context.read<NotificationCubit>());
     fcmService.initAfterLogin(getIt.get<ApiService>());
 
     final user = User(

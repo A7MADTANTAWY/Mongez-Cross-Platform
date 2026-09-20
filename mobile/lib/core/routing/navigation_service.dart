@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mongez/core/di/services_locator.dart';
 import 'package:mongez/features/auth/bloc/auth_cubit.dart';
 import 'package:mongez/features/auth/models/auth.dart';
 import 'package:mongez/features/auth/screens/google_sign_in_screen.dart';
 import 'package:mongez/features/client/favorites/presentation/cubit/favorites_cubit.dart';
 import 'package:mongez/features/client/home/presentation/cubit/categories_cubit.dart';
+import 'package:mongez/features/client/order/domain/order_repository.dart';
+import 'package:mongez/features/client/order/presentation/screens/order_details_screen.dart';
 import 'package:mongez/features/shared/main/presentation/screens/main_screen.dart';
 import 'package:mongez/features/client/order/presentation/cubit/checkout_cubit.dart';
 import 'package:mongez/features/client/order/presentation/cubit/customer_orders_cubit.dart';
 import 'package:mongez/features/worker/requests/presentation/cubit/job_history_cubit.dart';
 import 'package:mongez/features/worker/requests/presentation/cubit/technician_orders_cubit.dart';
+import 'package:mongez/features/shared/notifications/presentation/screens/notification_screen.dart';
 import 'package:mongez/features/shared/profile/presentation/cubit/profile_cubit.dart';
 import 'package:mongez/features/worker/profile_setup/presentation/cubit/create_worker_profile_cubit.dart';
 import 'package:mongez/features/worker/home/presentation/cubit/worker_stats_cubit.dart';
@@ -18,6 +22,47 @@ import 'package:mongez/features/client/home/presentation/cubit/workers_cubit.dar
 import 'package:mongez/core/utils/pref_helper.dart';
 
 class NavigationService {
+  /// Root navigator for navigation from non-widget contexts — FCM banner
+  /// taps and background/terminated push opens route through this key.
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
+  /// Opens the notifications screen (used as the fallback when a push tap
+  /// carries no order id).
+  static void openNotifications() {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) return;
+    navigator.push(
+      MaterialPageRoute(builder: (_) => const NotificationScreen()),
+    );
+  }
+
+  /// Deep-links a push tap to the linked order. Mirrors the tap logic of the
+  /// notifications screen; falls back to the notifications screen on any
+  /// failure.
+  static Future<void> openOrderByNotification(int orderId) async {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) return;
+    final result = await getIt.get<OrderRepository>().getOrderById(orderId);
+    result.fold(
+      (_) => openNotifications(),
+      (order) {
+        final context = navigatorKey.currentContext;
+        if (context == null) return;
+        final profileState = context.read<ProfileCubit>().state;
+        final currentUserId = profileState is ProfileSuccess
+            ? profileState.profile.id
+            : -1;
+        final isCustomer = order.clientId == currentUserId;
+        navigator.push(
+          MaterialPageRoute(
+            builder: (_) =>
+                OrderDetailsScreen(order: order, isCustomer: isCustomer),
+          ),
+        );
+      },
+    );
+  }
   static Future<void> toMainScreen(BuildContext context, Auth auth) async {
     _clearImageCache();
     _resetAllCubits(context);

@@ -31,6 +31,28 @@ class NotificationModel extends Equatable {
     );
   }
 
+  /// Builds a live incoming-push item for the in-memory list. Push payloads
+  /// carry no server row id, so a negative timestamp-based id is used to keep
+  /// it on top and avoid colliding with server ids; the next server refresh
+  /// replaces it with the authoritative row.
+  factory NotificationModel.incoming({
+    required String title,
+    required String message,
+    Map<String, dynamic> data = const {},
+    DateTime? createdAt,
+  }) {
+    final ts = createdAt ?? DateTime.now();
+    return NotificationModel(
+      id: -(ts.millisecondsSinceEpoch ~/ 1000),
+      title: title,
+      message: message,
+      type: 'push',
+      isRead: false,
+      createdAt: ts.toUtc().toIso8601String(),
+      orderId: int.tryParse(data['order_id']?.toString() ?? ''),
+    );
+  }
+
   NotificationModel copyWith({bool? isRead}) {
     return NotificationModel(
       id: id,
