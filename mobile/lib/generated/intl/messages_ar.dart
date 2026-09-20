@@ -72,7 +72,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("إضافة عنوان جديد"),
         "addNewCard": MessageLookupByLibrary.simpleMessage("إضافة بطاقة جديدة"),
         "addPhotosOrVoice": MessageLookupByLibrary.simpleMessage(
-            "أضف صور أو ملاحظة صوتية لشرح المشكلة"),
+            "أضف حتى 4 صور أو ملاحظة صوتية (بحد أقصى دقيقتين) لشرح المشكلة"),
         "addService": MessageLookupByLibrary.simpleMessage("إضافة خدمة"),
         "addServiceDesc":
             MessageLookupByLibrary.simpleMessage("أضف خدمة جديدة تقدمها"),
@@ -299,6 +299,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("تحديد الكل كمقروء"),
         "markAsFinished":
             MessageLookupByLibrary.simpleMessage("وضع علامة كمكتمل"),
+        "maxPhotosReached": MessageLookupByLibrary.simpleMessage(
+            "وصلت للحد الأقصى (4 صور)"),
         "micPermissionDenied":
             MessageLookupByLibrary.simpleMessage("تم رفض إذن الميكروفون"),
         "micPermissionUnavailable":

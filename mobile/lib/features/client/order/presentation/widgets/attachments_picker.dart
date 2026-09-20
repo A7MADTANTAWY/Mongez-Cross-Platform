@@ -42,6 +42,7 @@ class _AttachmentsPickerState extends State<AttachmentsPicker> {
   final AudioPlayer _player = AudioPlayer();
 
   final List<PickedAttachment> _photos = [];
+  static const int maxPhotos = 4;
   String? _audioPath;
   int? _audioDurationSeconds;
   bool _isRecording = false;
@@ -66,6 +67,11 @@ class _AttachmentsPickerState extends State<AttachmentsPicker> {
   }
 
   Future<void> _pickFromCamera() async {
+    if (_photos.length >= maxPhotos) {
+      if (!mounted) return;
+      _showError(S.of(context).maxPhotosReached);
+      return;
+    }
     try {
       final picked = await ImagePickerService.pickOne(fromCamera: true);
       if (picked != null) {
@@ -84,7 +90,7 @@ class _AttachmentsPickerState extends State<AttachmentsPicker> {
 
   Future<void> _pickFromGallery() async {
     try {
-      final remaining = 5 - _photos.length;
+      final remaining = maxPhotos - _photos.length;
       final files = await ImagePickerService.pickMulti(limit: remaining);
       if (files.isNotEmpty) {
         setState(() => _photos.addAll(files.take(remaining)));
@@ -209,14 +215,14 @@ class _AttachmentsPickerState extends State<AttachmentsPicker> {
             PickerActionChip(
               icon: Icons.photo_camera_outlined,
               label: lang.cameraOption,
-              onTap: _photos.length < 5 ? _pickFromCamera : null,
+              onTap: _photos.length < maxPhotos ? _pickFromCamera : null,
             ),
             const SizedBox(width: 8),
             const SizedBox(width: 8),
             PickerActionChip(
               icon: Icons.photo_library_outlined,
               label: lang.galleryOption,
-              onTap: _photos.length < 5 ? _pickFromGallery : null,
+              onTap: _photos.length < maxPhotos ? _pickFromGallery : null,
             ),
             const SizedBox(width: 8),
             PickerActionChip(

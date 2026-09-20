@@ -80,6 +80,8 @@ _AUDIO_EXTS = {"mp3", "m4a", "aac", "wav", "ogg", "opus", "amr"}
 _VIDEO_EXTS = {"mp4", "mov", "3gp", "webm", "mkv"}
 _IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "gif", "heic"}
 _MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024  # 15 MB
+_MAX_IMAGES_PER_ORDER = 4
+_MAX_AUDIO_PER_ORDER = 1
 
 
 def _attachment_kind(name: str) -> str:
@@ -207,6 +209,28 @@ class OrderListCreateView(APIView):
                     ]},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+        image_count = sum(
+            1 for f in files if _attachment_kind(f.name) == OrderAttachment.KIND_IMAGE
+        )
+        audio_count = sum(
+            1 for f in files if _attachment_kind(f.name) == OrderAttachment.KIND_AUDIO
+        )
+        if image_count > _MAX_IMAGES_PER_ORDER:
+            return Response(
+                {"attachments": [
+                    f"Too many images: {image_count}. Max is "
+                    f"{_MAX_IMAGES_PER_ORDER} per order.",
+                ]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if audio_count > _MAX_AUDIO_PER_ORDER:
+            return Response(
+                {"attachments": [
+                    f"Too many audio notes: {audio_count}. Max is "
+                    f"{_MAX_AUDIO_PER_ORDER} per order.",
+                ]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         for f in files:
             OrderAttachment.objects.create(
                 order=order,
@@ -269,10 +293,43 @@ class OrderAttachmentUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        files = list(request.FILES.values())
+        files = []
+        files += request.FILES.getlist("attachments")
+        files += request.FILES.getlist("photos")
+        files += request.FILES.getlist("photo")
+        files += request.FILES.getlist("audio")
         if not files:
             return Response(
                 {"error": "No file uploaded. Use multipart/form-data with a file field."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Enforce per-order totals counting what's already stored — this is
+        # what stops stacking attachments across repeated uploads.
+        image_count = order.attachments.filter(
+            kind=OrderAttachment.KIND_IMAGE
+        ).count() + sum(
+            1 for f in files if _attachment_kind(f.name) == OrderAttachment.KIND_IMAGE
+        )
+        audio_count = order.attachments.filter(
+            kind=OrderAttachment.KIND_AUDIO
+        ).count() + sum(
+            1 for f in files if _attachment_kind(f.name) == OrderAttachment.KIND_AUDIO
+        )
+        if image_count > _MAX_IMAGES_PER_ORDER:
+            return Response(
+                {"error": (
+                    f"Too many images: {image_count}. Max is "
+                    f"{_MAX_IMAGES_PER_ORDER} per order."
+                )},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if audio_count > _MAX_AUDIO_PER_ORDER:
+            return Response(
+                {"error": (
+                    f"Too many audio notes: {audio_count}. Max is "
+                    f"{_MAX_AUDIO_PER_ORDER} per order."
+                )},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -542,15 +599,14 @@ class OrderCancelView(APIView):
                 role=User.Role.ADMIN, is_active=True,
             )
             for admin in admins:
-                title, message = t(
-                    admin, "worker_delay_cancellation_admin",
-                    order_id=order.id, worker=worker_label,
-                )
                 notify(
                     admin,
-                    title,
-                    message,
                     notif_type=Notification.IN_APP,
+                    translation_key="worker_delay_cancellation_admin",
+                    translation_params={
+                        "order_id": order.id,
+                        "worker": worker_label,
+                    },
                     data={
                         "kind": "worker_delay_cancellation",
                         "order_id": order.id,

@@ -1,7 +1,28 @@
 import 'package:file_selector/file_selector.dart' as fs;
 import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart' as ip;
 import 'package:mongez/core/utils/picked_attachment.dart';
+
+const int _maxDimension = 1600;
+const int _jpegQuality = 85;
+
+/// Downscale + re-encode a photo as JPEG so uploads stay small. This is the
+/// desktop/web equivalent of image_picker's `maxWidth`/`imageQuality`, which
+/// only apply on Android/iOS. Runs off the UI thread via `compute`; falls
+/// back to the original bytes on any decode/encode failure.
+Uint8List _compress(Uint8List bytes) {
+  try {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return bytes;
+    final resized = decoded.width > _maxDimension
+        ? img.copyResize(decoded, width: _maxDimension)
+        : decoded;
+    return Uint8List.fromList(img.encodeJpg(resized, quality: _jpegQuality));
+  } catch (_) {
+    return bytes;
+  }
+}
 
 /// Platform-aware image picking.
 ///
@@ -38,7 +59,7 @@ class ImagePickerService {
       );
       final file = await fs.openFile(acceptedTypeGroups: [typeGroup]);
       if (file == null) return null;
-      final bytes = await file.readAsBytes();
+      final bytes = await compute(_compress, await file.readAsBytes());
       return PickedAttachment(name: file.name, bytes: bytes, path: file.path);
     }
 
@@ -49,7 +70,8 @@ class ImagePickerService {
       imageQuality: 85,
     );
     if (picked == null) return null;
-    final bytes = await picked.readAsBytes();
+    var bytes = await picked.readAsBytes();
+    if (kIsWeb) bytes = await compute(_compress, bytes);
     return PickedAttachment(
       name: picked.name,
       bytes: bytes,
@@ -68,7 +90,7 @@ class ImagePickerService {
       final files = await fs.openFiles(acceptedTypeGroups: [typeGroup]);
       final out = <PickedAttachment>[];
       for (final f in files.take(limit)) {
-        final bytes = await f.readAsBytes();
+        final bytes = await compute(_compress, await f.readAsBytes());
         out.add(PickedAttachment(name: f.name, bytes: bytes, path: f.path));
       }
       return out;
@@ -80,7 +102,8 @@ class ImagePickerService {
     );
     final out = <PickedAttachment>[];
     for (final f in picked.take(limit)) {
-      final bytes = await f.readAsBytes();
+      var bytes = await f.readAsBytes();
+      if (kIsWeb) bytes = await compute(_compress, bytes);
       out.add(PickedAttachment(
         name: f.name,
         bytes: bytes,

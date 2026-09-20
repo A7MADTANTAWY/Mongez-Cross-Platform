@@ -2560,11 +2560,21 @@ class S {
     );
   }
 
-  /// `Add photos or a voice note to explain the issue`
+  /// `Add up to 4 photos or a voice note (max 2 min) to explain the issue`
   String get addPhotosOrVoice {
     return Intl.message(
-      'Add photos or a voice note to explain the issue',
+      'Add up to 4 photos or a voice note (max 2 min) to explain the issue',
       name: 'addPhotosOrVoice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Maximum of 4 photos reached`
+  String get maxPhotosReached {
+    return Intl.message(
+      'Maximum of 4 photos reached',
+      name: 'maxPhotosReached',
       desc: '',
       args: [],
     );

@@ -73,7 +73,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Add New Address"),
         "addNewCard": MessageLookupByLibrary.simpleMessage("Add New Card"),
         "addPhotosOrVoice": MessageLookupByLibrary.simpleMessage(
-            "Add photos or a voice note to explain the issue"),
+            "Add up to 4 photos or a voice note (max 2 min) to explain the issue"),
         "addService": MessageLookupByLibrary.simpleMessage("Add Service"),
         "addServiceDesc": MessageLookupByLibrary.simpleMessage(
             "Add a new service you provide"),
@@ -305,6 +305,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "markAllRead": MessageLookupByLibrary.simpleMessage("Mark all as read"),
         "markAsFinished":
             MessageLookupByLibrary.simpleMessage("Mark as Finished"),
+        "maxPhotosReached": MessageLookupByLibrary.simpleMessage(
+            "Maximum of 4 photos reached"),
         "micPermissionDenied": MessageLookupByLibrary.simpleMessage(
             "Microphone permission denied"),
         "micPermissionUnavailable": MessageLookupByLibrary.simpleMessage(

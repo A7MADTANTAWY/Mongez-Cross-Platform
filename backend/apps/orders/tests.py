@@ -1,6 +1,7 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -9,7 +10,7 @@ from rest_framework.test import APITestCase
 from apps.notifications.models import Notification
 from apps.users.models import Address, User
 from apps.workers.models import ServiceCategory, WorkerProfile
-from .models import Order
+from .models import Order, OrderAttachment
 
 
 class OrderLifecycleTests(APITestCase):
@@ -254,3 +255,93 @@ class OrderCancellationReasonTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", resp.data)
         self.assertIn("reason", resp.data["error"])
+
+
+class OrderAttachmentLimitTests(APITestCase):
+    """Enforced limits: max 4 images + 1 audio note per order.
+
+    The upload-after-creation path must count attachments already stored on
+    the order, otherwise repeated uploads could stack files forever."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.category = ServiceCategory.objects.create(name="Plumbing")
+        cls.client_user = User.objects.create_user(
+            username="attach_client", phone="+201000000030",
+            password="Sup3r-Secret!", role=User.Role.CLIENT,
+            profile_completed=True,
+        )
+        cls.address = Address.objects.create(
+            user=cls.client_user, label="Home",
+            address="12 Test St", governorate="cairo", city="Nasr City",
+        )
+
+    def _files(self, n_images, n_audio):
+        files = [
+            SimpleUploadedFile(
+                f"photo_{i}.jpg", b"fakejpeg", content_type="image/jpeg",
+            )
+            for i in range(n_images)
+        ]
+        files += [
+            SimpleUploadedFile(
+                f"voice_{i}.m4a", b"fakeaudio", content_type="audio/mp4",
+            )
+            for i in range(n_audio)
+        ]
+        return files
+
+    def _post_create(self, files):
+        self.client.force_authenticate(user=self.client_user)
+        return self.client.post(
+            reverse("order-list-create"),
+            {
+                "service_category": str(self.category.id),
+                "address_id": str(self.address.id),
+                "attachments": files,
+            },
+            format="multipart",
+        )
+
+    def test_order_with_five_images_is_rejected(self):
+        with patch("apps.orders.views.authorize_commission", return_value="dummy_key"):
+            resp = self._post_create(self._files(5, 0))
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST, resp.data)
+        self.assertIn("attachments", resp.data)
+        self.assertEqual(OrderAttachment.objects.count(), 0)
+
+    def test_order_with_two_audio_notes_is_rejected(self):
+        with patch("apps.orders.views.authorize_commission", return_value="dummy_key"):
+            resp = self._post_create(self._files(0, 2))
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST, resp.data)
+        self.assertIn("attachments", resp.data)
+        self.assertEqual(OrderAttachment.objects.count(), 0)
+
+    def test_upload_after_creation_exceeding_total_is_rejected(self):
+        with patch("apps.orders.views.authorize_commission", return_value="dummy_key"):
+            create_resp = self._post_create(self._files(2, 0))
+        self.assertEqual(create_resp.status_code, status.HTTP_201_CREATED, create_resp.data)
+        order = Order.objects.get(pk=create_resp.data["id"])
+        self.assertEqual(order.attachments.count(), 2)
+
+        # 2 stored + 3 new = 5 > 4 → must be rejected.
+        self.client.force_authenticate(user=self.client_user)
+        upload_resp = self.client.post(
+            reverse("order-attachments", args=[order.id]),
+            {"attachments": self._files(3, 0)},
+            format="multipart",
+        )
+        self.assertEqual(upload_resp.status_code, status.HTTP_400_BAD_REQUEST, upload_resp.data)
+        order.refresh_from_db()
+        self.assertEqual(order.attachments.count(), 2)
+
+    def test_order_with_exactly_four_images_passes(self):
+        with patch("apps.orders.views.authorize_commission", return_value="dummy_key"):
+            resp = self._post_create(self._files(4, 0))
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED, resp.data)
+        order = Order.objects.get(pk=resp.data["id"])
+        self.assertEqual(order.attachments.count(), 4)
+        self.assertEqual(
+            order.attachments.filter(kind=OrderAttachment.KIND_IMAGE).count(),
+            4,
+        )
