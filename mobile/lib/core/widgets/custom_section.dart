@@ -17,6 +17,7 @@ class CustomSection extends StatelessWidget {
     final theme = Theme.of(context);
     final tt = theme.textTheme;
     final cs = theme.colorScheme;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 20, 0, 12),
@@ -49,7 +50,7 @@ class CustomSection extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 2),
-                  Icon(Icons.chevron_right_rounded,
+                  Icon(isRtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
                       size: 18, color: cs.primary),
                 ],
               ),
