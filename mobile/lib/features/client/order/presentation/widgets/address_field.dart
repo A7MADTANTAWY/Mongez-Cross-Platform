@@ -18,7 +18,6 @@ class AddressField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final lang = S.of(context);
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -65,7 +64,7 @@ class AddressField extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(isRtl ? Icons.chevron_left : Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 color: theme.textTheme.bodySmall?.color),
           ],
         ),

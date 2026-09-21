@@ -24,7 +24,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final tt = theme.textTheme;
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
 
     return AppBar(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -45,12 +44,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   // app when coming back from Edit profile / Settings)
                   // we just no-op instead of throwing.
                   onTap: () => Navigator.maybePop(context),
-                  child: Icon(
-                    isRtl
-                        ? Icons.arrow_forward_rounded
-                        : Icons.arrow_back_rounded,
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
                     size: 20,
-                    color: cs.onSurface,
                   ),
                 ),
               ),

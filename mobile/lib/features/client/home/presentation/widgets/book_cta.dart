@@ -11,7 +11,6 @@ class BookCTA extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = S.of(context);
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
@@ -64,8 +63,7 @@ class BookCTA extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(isRtl ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded,
-              color: Colors.white),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.white),
           ],
         ),
       ),

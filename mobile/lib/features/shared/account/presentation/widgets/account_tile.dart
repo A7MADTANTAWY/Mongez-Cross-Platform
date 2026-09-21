@@ -19,7 +19,6 @@ class AccountTile extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final tt = theme.textTheme;
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -50,9 +49,7 @@ class AccountTile extends StatelessWidget {
             child: Text(subtitle, style: tt.bodySmall),
           ),
           trailing: Icon(
-            isRtl
-                ? Icons.chevron_left_rounded
-                : Icons.chevron_right_rounded,
+            Icons.chevron_right_rounded,
             color: cs.onSurface.withValues(alpha: 0.5),
           ),
           onTap: onTap,
